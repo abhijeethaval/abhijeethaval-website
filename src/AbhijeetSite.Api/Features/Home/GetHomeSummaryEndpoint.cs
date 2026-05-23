@@ -22,8 +22,7 @@ public static class HomeEndpointsExtension
     public static IEndpointRouteBuilder MapHomeEndpoints(this IEndpointRouteBuilder app)
     {
         app.MapGet("/api/home/summary", GetHomeSummaryEndpoint.Handle)
-           .WithName("GetHomeSummary")
-           .WithOpenApi();
+           .WithName("GetHomeSummary");
 
         return app;
     }
