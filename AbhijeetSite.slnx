@@ -1,0 +1,10 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/AbhijeetSite.Api/AbhijeetSite.Api.csproj" />
+    <Project Path="src/AbhijeetSite.AppHost/AbhijeetSite.AppHost.csproj" />
+    <Project Path="src/AbhijeetSite.ServiceDefaults/AbhijeetSite.ServiceDefaults.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/AbhijeetSite.Api.Tests/AbhijeetSite.Api.Tests.csproj" />
+  </Folder>
+</Solution>
