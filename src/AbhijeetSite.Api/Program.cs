@@ -20,6 +20,16 @@ app.UseCors(policy => policy
 // Map default endpoints (health check, etc.)
 app.MapDefaultEndpoints();
 
+// Ensure health checks are available in production for Azure Container Apps probes
+if (!app.Environment.IsDevelopment())
+{
+    app.MapHealthChecks("/health");
+    app.MapHealthChecks("/alive", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
+    {
+        Predicate = r => r.Tags.Contains("live")
+    });
+}
+
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {

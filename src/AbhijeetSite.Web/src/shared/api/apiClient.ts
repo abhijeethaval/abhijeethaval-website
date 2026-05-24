@@ -1,10 +1,6 @@
 const getApiBaseUrl = (): string => {
-  // If VITE_API_URL is provided via environment (e.g. by Aspire), use it.
-  if (import.meta.env.VITE_API_URL) {
-    return import.meta.env.VITE_API_URL;
-  }
-  // Fall back to default API local development port
-  return 'http://localhost:5297';
+  // Rely on relative URLs. Vite dev server proxy is used in development, and Nginx in production.
+  return '';
 };
 
 export const apiClient = {

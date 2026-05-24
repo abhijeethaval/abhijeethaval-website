@@ -83,3 +83,82 @@ Vertical Slice Architecture means organizing the codebase around **features** (w
 
 - **Step 2**: Introduce a persistence layer (Entity Framework Core and SQLite/PostgreSQL database containers inside Aspire).
 - **Step 3**: Implement dynamic content editing and a blog/article domain slice.
+
+---
+
+## Deployment to Azure Container Apps
+
+This solution is prepared for containerized deployment to **Azure Container Apps (ACA)** using **Azure Container Registry (ACR)**.
+
+### Architectural Topology
+
+- **Public Frontend (`abhijeetsite-web`)**:
+  - Exposes port `80` (public ingress).
+  - Built using a multi-stage Docker build: a Node.js stage compiles the static React/Vite assets, and an Nginx stage hosts them.
+  - The Nginx server serves the static assets and handles a SPA fallback router (`index.html`).
+  - At container startup, an entrypoint script performs environment variable substitution (via `envsubst`) to dynamically inject the `API_UPSTREAM` URL into the Nginx configuration.
+  - The browser calls relative `/api/*` endpoints on the web origin, and Nginx reverse-proxies them to the internal API container app.
+- **Internal API (`abhijeetsite-api`)**:
+  - Exposes port `8080` (internal ingress). Only accessible within the Container Apps Environment.
+  - Built **without a Dockerfile** using **.NET SDK container publishing** (`/t:PublishContainer`).
+  - Container-ready properties (repository name and exposed ports) are configured directly in the `AbhijeetSite.Api.csproj` project file.
+
+### Prerequisites
+
+- [Azure CLI](https://learn.microsoft.com/en-us/cli/azure/install-azure-cli) installed.
+- Access to an Azure Subscription with permissions to create Resource Groups, Managed Identities, ACRs, and ACA environments.
+
+### Local CLI Deployment Flow
+
+> [!NOTE]
+> The Azure resources (Resource Group, ACR, ACA Environment, User-Assigned Managed Identity with `AcrPull` permission, and both Container Apps themselves) are assumed to have been created beforehand (e.g. manually via the Azure Portal or through Infrastructure as Code (IaC) templates).
+
+Deployment scripts are provided in the `/deploy` folder to build and push container images and update the Container Apps.
+
+For **Windows (PowerShell)**:
+1. **Azure Login**
+   ```powershell
+   az login
+   ```
+2. **Build and Push Container Images**
+   ```powershell
+   .\deploy\build-and-push-images.ps1 [optional-tag]
+   ```
+3. **Update Existing Container Apps**
+   ```powershell
+   .\deploy\update-container-apps.ps1 [optional-tag]
+   ```
+
+For **Linux / macOS / Git Bash**:
+1. **Azure Login**
+   ```bash
+   az login
+   ```
+2. **Build and Push Container Images**
+   ```bash
+   ./deploy/build-and-push-images.sh [optional-tag]
+   ```
+3. **Update Existing Container Apps**
+   ```bash
+   ./deploy/update-container-apps.sh [optional-tag]
+   ```
+
+---
+
+### GitHub Actions CI/CD Pipeline
+
+A workflow is available in `.github/workflows/deploy-aca.yml` to automatically build, push, and deploy new releases on pushes to the `main` branch.
+
+#### Configuration Required
+
+1. **GitHub Secrets**:
+   - `AZURE_CLIENT_ID`: The application (client) ID of a Microsoft Entra ID App Registration configured with Federated Credentials for OIDC.
+   - `AZURE_TENANT_ID`: The directory (tenant) ID of your Entra ID tenant.
+   - `AZURE_SUBSCRIPTION_ID`: The Azure Subscription ID.
+
+2. **GitHub Variables**:
+   - `RESOURCE_GROUP`: `rg-abhijeetsite-dev`
+   - `ACR_NAME`: `acrabhijeetsitedev`
+   - `ACR_LOGIN_SERVER`: `acrabhijeetsitedev.azurecr.io`
+   - `API_APP`: `abhijeetsite-api`
+   - `WEB_APP`: `abhijeetsite-web`
