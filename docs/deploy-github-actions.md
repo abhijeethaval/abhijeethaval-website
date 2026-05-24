@@ -9,21 +9,49 @@ By utilizing cloud-based compilation (`az acr build`), this architecture complet
 ## Architectural Overview
 
 ```mermaid
-graph TD
-    Developer[Developer Local Machine] -->|git push| GitHub[GitHub Repository]
-    GitHub -->|Trigger Workflow| GHA[GitHub Actions Runner]
-    GHA -->|1. Authenticate via OIDC| Entra[Microsoft Entra ID App]
-    GHA -->|2. az acr build API| ACR[Azure Container Registry]
-    GHA -->|3. az acr build Web| ACR
-    ACR -->|4. Push Images| ACR_Images[(ACR Repositories)]
-    ACR_Images -->|5. Read via Managed ID| ACA_Env[Container Apps Env]
+flowchart TD
+    %% Define styles and classes
+    classDef developer fill:#2d3748,stroke:#4a5568,stroke-width:2px,color:#fff;
+    classDef github fill:#181717,stroke:#24292e,stroke-width:2px,color:#fff;
+    classDef azure fill:#0078d4,stroke:#005a9e,stroke-width:2px,color:#fff;
+    classDef security fill:#00b7c3,stroke:#008b8b,stroke-width:2px,color:#fff;
+    classDef storage fill:#f25f22,stroke:#d83b01,stroke-width:2px,color:#fff;
+    classDef container fill:#5c2d91,stroke:#4b1f7a,stroke-width:2px,color:#fff;
     
-    subgraph Azure Private VNet
-        ACA_Web[abhijeetsite-web Container] -->|6. Nginx HTTP Reverse Proxy| ACA_Api[abhijeetsite-api Container]
+    subgraph Local ["💻 Developer Machine"]
+        Dev["🛠️ Developer Local"]:::developer
     end
 
-    User([Browser Client]) -->|HTTPS Port 443| ACA_Web
+    subgraph GitHubPlatform ["🐱 GitHub SaaS Platform"]
+        Repo["📂 GitHub Repository"]:::github
+        Runner["🤖 GitHub Actions Runner"]:::github
+    end
+
+    subgraph Azure ["☁️ Azure Cloud"]
+        Entra["🔑 Entra ID App (OIDC)"]:::security
+        ACR["📦 Azure Container Registry"]:::storage
+        
+        subgraph ACAEnv ["🛡️ Private Container Apps VNet Environment"]
+            ACA_Web["🌐 Public Web App (Nginx)"]:::container
+            ACA_Api["⚙️ Internal API App (.NET)"]:::container
+        end
+    end
+    
+    Client(["👤 Browser User"])
+
+    %% Data Flow
+    Dev -->|git push| Repo
+    Repo -->|Trigger Job| Runner
+    Runner -->|1. Authenticate OIDC| Entra
+    Runner -->|2. az acr build API| ACR
+    Runner -->|3. az acr build Web| ACR
+    ACR -->|4. Deploy Revision| ACA_Web
+    ACR -->|4. Deploy Revision| ACA_Api
+    
+    Client -->|5. HTTPS Port 443| ACA_Web
+    ACA_Web -->|6. Nginx HTTP Reverse Proxy| ACA_Api
 ```
+
 
 1. **Secure Identity (OIDC)**: GitHub Actions securely logs into Azure using **OpenID Connect (OIDC)**, meaning you do **not** need to store password keys or service principal secrets in GitHub.
 2. **Cloud-Native Builds (`az acr build`)**: Source directories are packaged and compiled inside Azure Container Registry tasks, freeing local developer environments from running Docker or pulling heavy images.
@@ -161,3 +189,57 @@ Navigate to your GitHub repository's **Actions** tab to watch the workflow build
 # Update your Container Apps to the new image tags
 powershell -ExecutionPolicy Bypass -File .\deploy\update-container-apps.ps1 <your-git-short-sha-or-tag>
 ```
+
+---
+
+## 💡 Troubleshooting & Key Learnings (HTTPS Upstreams & SNI)
+
+During the deployment of this architecture, a critical connection issue was identified and resolved regarding Nginx reverse-proxying to the API app in Azure.
+
+### The Problem: SSL Handshake Resets (HTTP 502)
+When the frontend web app (`aca-abhijeet-site-web`) attempted to proxy `/api/*` to the external HTTPS endpoint of the API app (`https://aca-abhijeet-site.kindgrass-f8a936c7.centralindia.azurecontainerapps.io`), Nginx threw the following error:
+> `[error] peer closed connection in SSL handshake (104: Connection reset by peer) while SSL handshaking to upstream`
+
+This resulted in an **HTTP 502 Bad Gateway** response to the client.
+
+### Root Cause
+1. **Wrong Host Header**: The Nginx configuration was setting `proxy_set_header Host $host;`, which forwarded the client's request host (`aca-abhijeet-site-web...`) to the API.
+2. **Missing SNI (Server Name Indication)**: Nginx does not send SNI by default when handshaking with an HTTPS upstream.
+3. Azure Container Apps' ingress controller terminates SSL/TLS at the environment boundary. When it received a connection request without SNI and with a mismatched `Host` header, the ingress load balancer immediately aborted the connection.
+
+### The Solution: Robust Nginx Configuration
+To successfully proxy requests to HTTPS upstreams in Azure (and modern cloud environments), the Nginx location block must be configured with:
+1. `proxy_set_header Host $proxy_host;` — Sets the Host header to match the backend domain instead of forwarding the frontend host.
+2. `proxy_ssl_server_name on;` — Explicitly enables SNI for the SSL handshake.
+3. `proxy_ssl_name $proxy_host;` — Sends the correct server name during the handshake.
+
+Updated `nginx.conf.template` block:
+```nginx
+        location /api/ {
+            proxy_pass ${API_UPSTREAM}/api/;
+            proxy_http_version 1.1;
+            proxy_set_header Upgrade $http_upgrade;
+            proxy_set_header Connection 'upgrade';
+            proxy_set_header Host $proxy_host;
+            proxy_cache_bypass $http_upgrade;
+            proxy_ssl_server_name on;
+            proxy_ssl_name $proxy_host;
+        }
+```
+
+---
+
+## 🔍 Discovered Azure Infrastructure Details
+
+These are the verified resource names and identifiers for this deployment, discovered via standard Azure CLI operations:
+
+| Resource Type | Resource Name / Value | Description |
+| :--- | :--- | :--- |
+| **Resource Group** | `rg-abhijeet-site` | Deployment resource group |
+| **Location / Region** | `centralindia` | Central India region |
+| **Container Registry (ACR)** | `acrabhijeetsite` | Registry server: `acrabhijeetsite.azurecr.io` |
+| **ACA Environment** | `acaenv-abhijeet-site` | Managed Container Apps environment |
+| **Frontend Web App** | `aca-abhijeet-site-web` | Public Ingress FQDN: `aca-abhijeet-site-web.kindgrass-f8a936c7.centralindia.azurecontainerapps.io` |
+| **Backend API App** | `aca-abhijeet-site` | Public Ingress FQDN: `aca-abhijeet-site.kindgrass-f8a936c7.centralindia.azurecontainerapps.io` |
+| **Log Analytics Workspace** | `workspacergabhijeetsite8402` | Workspace Customer ID: `d738c1e6-e2da-4de8-8352-276afaaf4022` |
+
