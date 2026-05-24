@@ -37,7 +37,11 @@ if (app.Environment.IsDevelopment())
     app.MapScalarApiReference();
 }
 
-app.UseHttpsRedirection();
+// Skip HTTPS redirection when running in a container (Azure Container Apps handles SSL termination at Ingress)
+if (Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER") != "true")
+{
+    app.UseHttpsRedirection();
+}
 
 // Register the endpoints from the Home feature slice
 app.MapHomeEndpoints();

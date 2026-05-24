@@ -1,8 +1,8 @@
 .git
 .github
 .vs
-bin
-obj
+**/bin
+**/obj
 tests
 src/AbhijeetSite.Web/node_modules
 src/AbhijeetSite.Web/dist
