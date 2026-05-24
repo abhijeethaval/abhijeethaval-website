@@ -1,0 +1,54 @@
+name: Publish Container Images to ACR
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Get short SHA
+        id: slug
+        run: echo "SHA_SHORT=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
+
+      - name: Azure Login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Log in to Azure Container Registry
+        run: |
+          az acr login --name ${{ vars.ACR_NAME }}
+
+      - name: Build and Push API Container Image (.NET SDK)
+        run: |
+          dotnet publish src/AbhijeetSite.Api/AbhijeetSite.Api.csproj \
+            -c Release \
+            /t:PublishContainer \
+            -p:ContainerRegistry=${{ vars.ACR_LOGIN_SERVER }} \
+            -p:ContainerImageTag=${{ env.SHA_SHORT }}
+
+      - name: Build and Push Web Container Image (ACR Build)
+        run: |
+          az acr build \
+            --registry ${{ vars.ACR_NAME }} \
+            --resource-group ${{ vars.RESOURCE_GROUP }} \
+            --image ${{ vars.WEB_APP }}:${{ env.SHA_SHORT }} \
+            src/AbhijeetSite.Web
