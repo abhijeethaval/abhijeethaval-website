@@ -4,5 +4,4 @@
 **/bin
 **/obj
 tests
-src/AbhijeetSite.Web/node_modules
-src/AbhijeetSite.Web/dist
+src/AbhijeetSite.Web
