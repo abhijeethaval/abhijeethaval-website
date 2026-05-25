@@ -28,8 +28,8 @@ public class ApiTests : IClassFixture<WebApplicationFactory<Program>>
         var content = await response.Content.ReadFromJsonAsync<HomeSummaryResponse>();
         Assert.NotNull(content);
         Assert.Equal("Abhijeet Haval", content.Name);
-        Assert.Equal("Principal Software Architect", content.Headline);
-        Assert.Contains("Personal technical website foundation", content.Summary);
+        Assert.Equal("Principal AI Architect | Enterprise AI Agents, Agent Harnesses & Skills | Microsoft Agent Framework, MCP, RAG, LangGraph, Azure AI Foundry | SaaS & Distributed Systems | .NET, Python, TypeScript", content.Headline);
+        Assert.Contains("Principal Architect with 18 years of experience", content.Summary);
     }
 
     // Helper DTO to deserialize response for assertions
