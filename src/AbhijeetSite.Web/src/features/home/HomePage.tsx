@@ -34,7 +34,6 @@ export const HomePage: React.FC = () => {
           <div className="loading-card glass-panel">
             <div className="shimmer shimmer-avatar animate-pulse"></div>
             <div className="shimmer shimmer-title animate-pulse"></div>
-            <div className="shimmer shimmer-subtitle animate-pulse"></div>
             <div className="shimmer shimmer-body animate-pulse"></div>
           </div>
         )}
@@ -58,7 +57,6 @@ export const HomePage: React.FC = () => {
               </div>
               <div className="profile-title">
                 <h1 className="name-heading">{data.name}</h1>
-                <p className="headline-text">{data.headline}</p>
               </div>
             </div>
             
@@ -67,12 +65,17 @@ export const HomePage: React.FC = () => {
             <div className="profile-body">
               <p className="summary-text">{data.summary}</p>
             </div>
-            
+
             <div className="profile-footer">
-              <span className="badge">.NET Aspire</span>
-              <span className="badge">React & Vite</span>
-              <span className="badge">Minimal API</span>
-              <span className="badge">Vertical Slice</span>
+              {data.headline
+                .split(/[|,]/)
+                .map(item => item.trim())
+                .filter(Boolean)
+                .map((badge, index) => (
+                  <span key={index} className="badge">
+                    {badge}
+                  </span>
+                ))}
             </div>
           </main>
         )}

@@ -67,7 +67,7 @@ Vertical Slice Architecture means organizing the codebase around **features** (w
 ## Current Scope
 
 - **Backend**:
-  - Exposes `GET /api/home/summary` returning the Principal Software Architect details.
+  - Exposes `GET /api/home/summary` returning the Principal AI Architect details.
   - Configures Swagger UI for endpoint discovery.
   - Implements basic health checks `/health` and `/alive`.
 - **Frontend**:
