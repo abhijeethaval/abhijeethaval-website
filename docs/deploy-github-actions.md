@@ -196,7 +196,18 @@ git commit -m "docs: add GitHub Actions and Container Apps deployment guide"
 git push origin main
 ```
 
-Navigate to your GitHub repository's **Actions** tab to watch the workflow build and publish both images. Once it completes successfully, trigger the deployment update manually using your local script:
+Navigate to your GitHub repository's **Actions** tab to watch the workflow build and publish both images. Once it completes successfully, you can trigger the deployment update in one of two ways:
+
+#### Option A: Trigger the Deployment via GitHub Actions (Recommended)
+1. Go to your repository's **Actions** tab.
+2. Select the **Deploy Container Images to ACA** workflow from the left sidebar.
+3. Click the **Run workflow** dropdown on the right.
+4. Input the **Image Tag** (e.g., your git short SHA `5111d4e` or semantic version).
+5. (Optional) Enter custom Container App names if you wish to override the default repository variables.
+6. Click **Run workflow** to initiate the deployment.
+
+#### Option B: Trigger the Deployment via Local PowerShell Script
+Alternatively, trigger the deployment update manually using your local script:
 ```powershell
 # Update your Container Apps to the new image tags
 powershell -ExecutionPolicy Bypass -File .\deploy\update-container-apps.ps1 <your-git-short-sha-or-tag>

@@ -1,0 +1,52 @@
+name: Deploy Container Images to ACA
+
+on:
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: 'The tag of the container images to deploy (e.g., git short SHA or semantic version)'
+        required: true
+        type: string
+      api_app_name:
+        description: 'Azure Container App Name for the Backend API (Optional override; defaults to vars.API_APP or aca-abhijeet-site)'
+        required: false
+        type: string
+      web_app_name:
+        description: 'Azure Container App Name for the Frontend Web App (Optional override; defaults to vars.WEB_APP_CONTAINER_NAME or aca-abhijeet-site-web)'
+        required: false
+        type: string
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy:
+    name: Deploy to ACA
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Azure Login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Deploy API App to Azure Container Apps
+        uses: azure/container-apps-deploy-action@v2
+        with:
+          acrName: ${{ vars.ACR_NAME }}
+          containerAppName: ${{ inputs.api_app_name || vars.API_APP || 'aca-abhijeet-site' }}
+          resourceGroup: ${{ vars.RESOURCE_GROUP }}
+          imageToDeploy: ${{ vars.ACR_LOGIN_SERVER }}/abhijeetsite-api:${{ inputs.image_tag }}
+
+      - name: Deploy Web App to Azure Container Apps
+        uses: azure/container-apps-deploy-action@v2
+        with:
+          acrName: ${{ vars.ACR_NAME }}
+          containerAppName: ${{ inputs.web_app_name || vars.WEB_APP_CONTAINER_NAME || 'aca-abhijeet-site-web' }}
+          resourceGroup: ${{ vars.RESOURCE_GROUP }}
+          imageToDeploy: ${{ vars.ACR_LOGIN_SERVER }}/${{ vars.WEB_APP || 'abhijeetsite-web' }}:${{ inputs.image_tag }}
