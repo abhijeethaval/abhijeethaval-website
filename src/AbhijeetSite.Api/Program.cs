@@ -1,5 +1,7 @@
 using AbhijeetSite.Api.Features.Home;
 using AbhijeetSite.Api.Features.Profile;
+using AbhijeetSite.Api.Infrastructure.Persistence;
+using AbhijeetSite.Api.SharedKernel.Time;
 using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -10,6 +12,8 @@ builder.AddServiceDefaults();
 // Add services to the container.
 builder.Services.AddCors();
 builder.Services.AddOpenApi();
+builder.Services.AddSingleton<IApplicationClock, SystemApplicationClock>();
+builder.Services.AddPersistence(builder.Configuration);
 
 var app = builder.Build();
 
