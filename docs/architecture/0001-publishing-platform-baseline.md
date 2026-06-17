@@ -98,9 +98,20 @@ Strongly typed IDs are owned by the module that owns the concept. For example, `
 lives in `Identity`, `PublishedArticleId` lives in `Articles`, and `CommentId` lives in
 `Comments`. Shared kernel must not define domain-specific ID types.
 
+Domain values with rules are module-owned value objects. `ArticleSlug` lives in the
+`Articles` module because it carries URL identity, validation, and uniqueness semantics.
+The database stores the slug as text, while EF converts at the persistence boundary.
+Slug uniqueness is checked in application code to return typed duplicate-slug errors and
+also enforced by a database unique index as the concurrency backstop.
+
 Cross-module ID dependencies must be one-way. Bidirectional module references require a
 design review and should usually be replaced by clearer ownership, an application
 orchestration boundary, or a read model/projection.
+
+Database foreign keys may cross module schemas to protect data integrity, but EF
+navigation properties must not cross module boundaries. Cross-module delete behavior is
+restricted by default; lifecycle changes should use explicit statuses such as `Archived`,
+`Unpublished`, `Rejected`, or `Deleted`.
 
 ## Architecture Enforcement
 
@@ -149,6 +160,9 @@ failures.
 module-owned, such as `ArticlesErrors.DuplicateSlug` or
 `CommentsErrors.InvalidModerationTransition`.
 
+HTTP endpoints map `Result` failures to `ProblemDetails` at the transport boundary.
+Domain and application handlers should not know HTTP status codes.
+
 ## Canonical Names And States
 
 | Type | Values |
@@ -158,6 +172,10 @@ module-owned, such as `ArticlesErrors.DuplicateSlug` or
 | `CommentStatus` | `Pending`, `Approved`, `Rejected`, `Deleted` |
 | External providers | `Google`, `LinkedIn` |
 | Authorization policies | `AuthenticatedUser`, `AdminOnly` |
+
+Statuses are stored as text with database check constraints rather than integer enum
+ordinals. Text values keep persisted state readable and check constraints prevent invalid
+raw database writes without creating PostgreSQL enum migration friction.
 
 ## Persistence Boundaries
 
@@ -188,6 +206,14 @@ a manually running service.
 Production API startup must not apply migrations automatically. Local development and
 tests may apply migrations explicitly, but production schema changes are a deployment or
 operator action to avoid hidden rollout failures and scale-out races.
+
+Business timestamps are represented as UTC `DateTimeOffset` values in application code
+and persisted using PostgreSQL `timestamp with time zone`. Database defaults may exist for
+operational safety, but they are not the source of business time.
+
+Iteration 01 does not add optimistic concurrency tokens because `CreateArticleDraft` is a
+create-only path. Add optimistic concurrency when update workflows arrive, starting with
+draft editing in iteration 03 and comment moderation in iteration 05.
 
 ## Publishing Model
 
@@ -229,6 +255,9 @@ transition succeeds.
 | Generic repositories over EF | Add indirection without protecting a domain boundary. |
 | MediatR in the baseline | Adds dispatch indirection before pipeline behavior exists. |
 | Broad module services | Hide use-case boundaries and tend to collect unrelated behavior. |
+| Raw strings for article slugs | Scatter URL identity validation across handlers and entities. |
+| Integer-backed persisted statuses | Make persisted state opaque and allow accidental reorder bugs. |
+| Premature concurrency tokens in create-only paths | Adds persistence ceremony before update conflicts exist. |
 | Public runtime MDX compilation | Exposes readers to draft parsing failures and increases execution risk. |
 | React-owned OAuth flow | Pushes secrets and provider token handling into the browser boundary. |
 | User-authored MDX comments | Turns untrusted user input into executable content. |

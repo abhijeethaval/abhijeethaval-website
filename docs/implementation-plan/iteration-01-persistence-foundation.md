@@ -42,19 +42,28 @@ infrastructure.
   - `CommentId`
 - Keep strongly typed IDs in their owning modules.
 - Add EF value converters for strongly typed IDs.
+- Add `ArticleSlug` as an `Articles` module value object backed by text.
+- Add EF value conversion for `ArticleSlug`.
+- Enforce `ArticleSlug` uniqueness in application logic and with a database unique index.
 - Generate entity IDs in application/domain code before persistence.
 - Add an injected application clock for business timestamps.
 - Use the application clock for `CreatedAt`, `UpdatedAt`, `PublishedAt`,
   `LastSignedInAt`, and moderation timestamps.
+- Persist business timestamps as UTC `DateTimeOffset` values.
 - Use scalar IDs only for cross-module references.
+- Allow database foreign keys across module schemas for integrity.
+- Do not add cross-module EF navigation properties.
+- Use restricted delete behavior across module boundaries.
 - Model entities with private setters and explicit factory/transition methods.
 - Add `Result`-based domain operation outcomes for expected business failures.
+- Map `Result` errors to HTTP `ProblemDetails` only at HTTP endpoints.
 - Add shared kernel primitives for `Result`, base errors, and application time.
 - Keep concrete domain errors inside their owning modules.
 - Reject bidirectional module references unless a design review accepts the dependency.
 - Add `NetArchTest.Rules` architecture tests for module dependency direction.
 - Add one narrow test-only `CreateArticleDraft` path below HTTP that exercises:
   - typed IDs
+  - `ArticleSlug`
   - application clock
   - `Result` outcomes
   - EF value conversion
@@ -66,6 +75,8 @@ infrastructure.
   - `ArticleDraftStatus`: `Draft`, `ReadyToPublish`, `Archived`
   - `PublishedArticleStatus`: `Published`, `Unpublished`
   - `CommentStatus`: `Pending`, `Approved`, `Rejected`, `Deleted`
+- Store statuses as text with database check constraints.
+- Defer optimistic concurrency tokens until update workflows are introduced.
 - Add integration-test database strategy based on Testcontainers.
 
 ## Initial Schema
@@ -76,7 +87,17 @@ infrastructure.
 | `identity.ExternalLogins` | `Id`, `UserId`, `Provider`, `ProviderSubject`, `EmailAtLogin` |
 | `articles.ArticleDrafts` | `Id`, `Title`, `Slug`, `Summary`, `MdxSource`, `Status`, timestamps |
 | `articles.PublishedArticles` | `Id`, `DraftId`, `Slug`, `Title`, `Summary`, `RenderedHtml`, `PublishedAt`, `Revision` |
-| `comments.Comments` | `Id`, `ArticleId`, `UserId`, `Body`, `Status`, timestamps, moderation fields |
+| `comments.Comments` | `Id`, `PublishedArticleId`, `UserId`, `Body`, `Status`, timestamps, moderation fields |
+
+## Persistence Constraints
+
+| Constraint | Scope |
+|---|---|
+| Unique draft slug | `articles.ArticleDrafts.Slug` |
+| Status check constraints | `ArticleDraftStatus`, `PublishedArticleStatus`, `CommentStatus` columns |
+| Same-module foreign keys | `ExternalLogins.UserId`, `PublishedArticles.DraftId` |
+| Cross-module foreign keys | `Comments.UserId`, `Comments.PublishedArticleId` |
+| Cross-module delete behavior | Restrict by default |
 
 ## Frontend Work
 
@@ -101,7 +122,7 @@ the real workflow instead of replacing a disposable smoke artifact.
 Iteration 01 validates persistence-level invariants only:
 
 - title is required
-- slug is required and URL safe
+- slug is required and URL safe through `ArticleSlug`
 - summary is required
 - MDX source is non-empty
 - slug is unique
@@ -118,8 +139,9 @@ Full MDX parsing, component policy validation, and compilation are deferred to i
 - Repository/application smoke test can insert and read a draft through `CreateArticleDraft`.
 - `CreateArticleDraft` returns typed validation errors for persistence-level invalid input.
 - `CreateArticleDraft` does not parse or compile MDX.
-- Slug uniqueness is enforced.
+- `ArticleSlug` validation and uniqueness are enforced in application code and database indexes.
 - Invalid statuses cannot enter the domain model.
+- Invalid persisted statuses are blocked by database check constraints.
 - Module dependency rules are enforced by architecture tests.
 
 ## Acceptance Criteria
@@ -127,6 +149,7 @@ Full MDX parsing, component policy validation, and compilation are deferred to i
 - API starts with database configuration.
 - Integration tests run against a disposable or isolated test database.
 - No draft/article/comment state is stored in process memory.
+- `CreateArticleDraft` proves the module, persistence, `Result`, typed ID, slug, and clock conventions below HTTP.
 
 ## Risks
 
