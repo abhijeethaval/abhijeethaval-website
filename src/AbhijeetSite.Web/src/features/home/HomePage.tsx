@@ -1,85 +1,78 @@
 import React, { useEffect, useState } from 'react';
-import { homeApi } from './homeApi';
-import { HomeSummary } from './types';
+import { ProfilePage } from '../profile/ProfilePage';
+import { profileApi } from '../profile/profileApi';
+import { Profile } from '../profile/types';
 
 export const HomePage: React.FC = () => {
-  const [data, setData] = useState<HomeSummary | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchSummary = async () => {
+  const fetchProfile = async (): Promise<void> => {
     try {
-      setLoading(true);
+      setIsLoading(true);
       setError(null);
-      const summary = await homeApi.getSummary();
-      setData(summary);
-    } catch (err) {
-      console.error(err);
-      setError('Failed to load portfolio summary. Ensure the backend API is running.');
+      const loadedProfile: Profile = await profileApi.getProfile();
+      setProfile(loadedProfile);
+    } catch (errorValue) {
+      console.error(errorValue);
+      setError(getProfileLoadError(errorValue));
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchSummary();
+    void fetchProfile();
   }, []);
 
+  if (isLoading) {
+    return <LoadingScreen />;
+  }
+
+  if (error !== null || profile === null) {
+    return <ErrorScreen error={error ?? 'Profile data was not returned.'} onRetry={fetchProfile} />;
+  }
+
+  return <ProfilePage profile={profile} />;
+};
+
+const LoadingScreen: React.FC = () => {
   return (
-    <div className="home-container">
-      <div className="gradient-bg"></div>
-      
-      <div className="content-wrapper">
-        {loading && (
-          <div className="loading-card glass-panel">
-            <div className="shimmer shimmer-avatar animate-pulse"></div>
-            <div className="shimmer shimmer-title animate-pulse"></div>
-            <div className="shimmer shimmer-body animate-pulse"></div>
-          </div>
-        )}
-
-        {error && (
-          <div className="error-card glass-panel fade-in">
-            <div className="error-icon">⚡</div>
-            <h2>Connection Error</h2>
-            <p>{error}</p>
-            <button className="btn btn-primary" onClick={fetchSummary}>
-              Retry Connection
-            </button>
-          </div>
-        )}
-
-        {!loading && !error && data && (
-          <main className="profile-card glass-panel fade-in">
-            <div className="profile-header">
-              <div className="avatar-placeholder">
-                {data.name.split(' ').map(n => n[0]).join('')}
-              </div>
-              <div className="profile-title">
-                <h1 className="name-heading">{data.name}</h1>
-              </div>
-            </div>
-            
-            <div className="divider"></div>
-            
-            <div className="profile-body">
-              <p className="summary-text">{data.summary}</p>
-            </div>
-
-            <div className="profile-footer">
-              {data.headline
-                .split(/[|,]/)
-                .map(item => item.trim())
-                .filter(Boolean)
-                .map((badge, index) => (
-                  <span key={index} className="badge">
-                    {badge}
-                  </span>
-                ))}
-            </div>
-          </main>
-        )}
+    <main className="status-screen">
+      <div className="loading-panel">
+        <span className="loading-mark">AH</span>
+        <p>Loading profile</p>
       </div>
-    </div>
+    </main>
   );
+};
+
+interface ErrorScreenProps {
+  error: string;
+  onRetry: () => Promise<void>;
+}
+
+const ErrorScreen: React.FC<ErrorScreenProps> = ({ error, onRetry }) => {
+  const retry = (): void => {
+    void onRetry();
+  };
+
+  return (
+    <main className="status-screen">
+      <div className="error-panel">
+        <h1>Profile unavailable</h1>
+        <p>{error}</p>
+        <button type="button" onClick={retry}>Retry</button>
+      </div>
+    </main>
+  );
+};
+
+const getProfileLoadError = (errorValue: unknown): string => {
+  if (errorValue instanceof Error) {
+    return `Failed to load profile: ${errorValue.message}`;
+  }
+
+  return 'Failed to load profile due to an unknown client error.';
 };
