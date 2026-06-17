@@ -1,4 +1,5 @@
 using AbhijeetSite.Api.Features.Home;
+using AbhijeetSite.Api.Features.Profile;
 using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -45,6 +46,7 @@ if (Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER") != "true")
 
 // Register the endpoints from the Home feature slice
 app.MapHomeEndpoints();
+app.MapProfileEndpoints();
 
 app.Run();
 
