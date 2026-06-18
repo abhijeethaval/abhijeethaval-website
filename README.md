@@ -1,164 +1,210 @@
-# AbhijeetSite - Personal Website Foundation (Step 1)
+# Abhijeet Haval Website
 
-This is the foundation slice of a personal website built with **.NET Aspire**, **ASP.NET Core Minimal APIs**, **React/Vite (TypeScript)**, and **Vertical Slice Architecture**.
+Personal website for Abhijeet Haval, implemented as a full-stack .NET Aspire application:
 
-It is designed as a minimal, empty but working foundation, avoiding CQRS boilerplate, Entity Framework, databases, or complex abstractions.
+- **API**: ASP.NET Core Minimal APIs on `net10.0`
+- **Web**: React 18 + Vite + TypeScript
+- **Orchestration**: .NET Aspire AppHost with service defaults for health, telemetry, and discovery
+- **Deployment**: Azure Container Apps with ACR-hosted container images and GitHub Actions OIDC
+
+The current production-facing capability is a curated professional profile site. The planned next capability is a publishing platform for authenticated article drafting, MDX publishing, and moderated comments.
+
+---
+
+## Current Reality
+
+| Area | Current state |
+|---|---|
+| Public experience | Single-page profile site with hero, about, experience, and education sections. |
+| API surface | `GET /api/profile` for the full profile and `GET /api/home/summary` for backward-compatible summary data. |
+| Frontend data flow | React loads `/api/profile` through a relative API client. Vite proxies `/api` during local development; Nginx proxies `/api` in Azure. |
+| Backend data source | Curated in-process profile content in `ProfileContentProvider`; no database yet. |
+| Observability | Aspire service defaults, OpenTelemetry wiring, health endpoints, and development OpenAPI/Scalar UI. |
+| Persistence/auth/articles | Planned, not implemented. See `docs/implementation-plan/`. |
+| Deployment | Containerized API and Web images deployed to Azure Container Apps. |
+
+---
+
+## Repository Layout
+
+```text
+src/
+  AbhijeetSite.AppHost/          .NET Aspire orchestration host
+  AbhijeetSite.ServiceDefaults/  Shared health, telemetry, resilience, and discovery defaults
+  AbhijeetSite.Api/              ASP.NET Core Minimal API backend
+  AbhijeetSite.Web/              React + Vite + TypeScript frontend
+tests/
+  AbhijeetSite.Api.Tests/        xUnit integration tests for API endpoints
+deploy/
+  build-and-push-images.ps1      Azure ACR cloud-build helper for API and Web images
+docs/
+  deploy-github-actions.md       Azure Container Apps and GitHub Actions setup guide
+  implementation-plan/           Iterative roadmap for persistence, auth, articles, and comments
+.github/workflows/
+  publish-images.yml             Publishes images on pushes to main or manual trigger
+  deploy-aca.yml                 Manually deploys an image tag to Azure Container Apps
+```
 
 ---
 
 ## Prerequisites
 
-Before running the application, ensure you have the following installed:
-1. **.NET 9 SDK** (or higher)
-2. **Node.js** (v20.5.0 or higher) and **NPM**
-3. **.NET Aspire Workload** (install via `dotnet workload install aspire`)
+| Dependency | Version / note |
+|---|---|
+| .NET SDK | `10.0.x` |
+| .NET Aspire workload | Required for `AbhijeetSite.AppHost` |
+| Node.js | Node 20+ recommended |
+| npm | Required for `src/AbhijeetSite.Web` |
+| Azure CLI | Required only for Azure deployment workflows from a local machine |
 
----
+Install Aspire if it is not already available:
 
-## How to Run
-
-To run the entire solution (both backend API and frontend Web client orchestrated by Aspire):
-
-```bash
-dotnet run --project src/AbhijeetSite.AppHost
+```powershell
+dotnet workload install aspire
 ```
 
-Once running, the terminal will output the link to the **.NET Aspire Dashboard** (e.g. `https://localhost:17276`). Access it in your browser to view:
-- Running API project resources.
-- Running React/Vite project resources.
-- Console logs, traces, and metrics.
+Install frontend dependencies:
 
----
-
-## Project Structure
-
-The project has the following structure:
-
-```text
-/src
-  /AbhijeetSite.AppHost          # .NET Aspire orchestration engine
-  /AbhijeetSite.ServiceDefaults  # Shared telemetry, logging, metrics & health checks
-  /AbhijeetSite.Api              # ASP.NET Core Minimal API backend
-  /AbhijeetSite.Web              # React + Vite + TypeScript frontend
-/tests
-  /AbhijeetSite.Api.Tests        # xUnit API Integration tests
+```powershell
+cd src\AbhijeetSite.Web
+npm ci
 ```
 
 ---
 
-## Vertical Slice Architecture in this Solution
+## Run Locally
 
-Vertical Slice Architecture means organizing the codebase around **features** (what the system does) rather than technical layers (how the system does it, e.g., controllers, services, repositories separated into global folders).
+Run the full app through Aspire:
 
-- **Backend API (`/src/AbhijeetSite.Api/Features/Home`)**:
-  - The home feature contains all files related to the home summary endpoint in a single folder.
-  - `GetHomeSummaryEndpoint.cs`: Mappings and endpoint handler logic.
-  - `HomeSummaryResponse.cs`: Typed DTO response structure.
-  - Extension registration is called in `Program.cs` via `app.MapHomeEndpoints();`, ensuring Program.cs only does high-level routing setup.
+```powershell
+dotnet run --project src\AbhijeetSite.AppHost
+```
 
-- **Frontend React (`/src/AbhijeetSite.Web/src/features/home`)**:
-  - Contains components, state, types, and api services related strictly to the home feature:
-    - `HomePage.tsx`: Renders the landing panel, handles loading/error states.
-    - `homeApi.ts`: Communicates with backend using the shared API client.
-    - `types.ts`: Local DTO types.
+Aspire starts:
 
----
+- API service named `api`
+- Vite development server named `web`
+- Aspire dashboard with logs, health, traces, and resource endpoints
 
-## Current Scope
+The AppHost passes the API endpoint to Vite through `VITE_API_URL`, and `vite.config.ts` proxies `/api` to that backend.
 
-- **Backend**:
-  - Exposes `GET /api/home/summary` returning the Principal AI Architect details.
-  - Configures Swagger UI for endpoint discovery.
-  - Implements basic health checks `/health` and `/alive`.
-- **Frontend**:
-  - Simple, clean single-page site with modern visual design (glassmorphic profile card, glowing ambient background gradients, responsive layouts, custom fonts).
-  - Fetches details from API and displays them dynamically.
-  - Handles loading and network error states with a retry mechanism.
-- **Testing**:
-  - Integration tests using `WebApplicationFactory<Program>` validating that `/api/home/summary` returns `HTTP 200` with the correct JSON values.
+Run individual services when debugging a narrower surface:
+
+```powershell
+dotnet run --project src\AbhijeetSite.Api
+```
+
+```powershell
+cd src\AbhijeetSite.Web
+npm run dev
+```
 
 ---
 
-## Next Steps
+## API Endpoints
 
-- **Step 2**: Introduce a persistence layer (Entity Framework Core and SQLite/PostgreSQL database containers inside Aspire).
-- **Step 3**: Implement dynamic content editing and a blog/article domain slice.
+| Endpoint | Purpose |
+|---|---|
+| `GET /api/profile` | Full curated profile: headline, summary, about text, expertise, experience, and education. |
+| `GET /api/home/summary` | Compatibility summary derived from the same profile content source. |
+| `/health` | Health probe endpoint. |
+| `/alive` | Liveness probe endpoint. |
 
----
-
-## Deployment to Azure Container Apps
-
-This solution is prepared for containerized deployment to **Azure Container Apps (ACA)** using **Azure Container Registry (ACR)**.
-
-### Architectural Topology
-
-- **Public Frontend (`abhijeetsite-web`)**:
-  - Exposes port `80` (public ingress).
-  - Built using a multi-stage Docker build: a Node.js stage compiles the static React/Vite assets, and an Nginx stage hosts them.
-  - The Nginx server serves the static assets and handles a SPA fallback router (`index.html`).
-  - At container startup, an entrypoint script performs environment variable substitution (via `envsubst`) to dynamically inject the `API_UPSTREAM` URL into the Nginx configuration.
-  - The browser calls relative `/api/*` endpoints on the web origin, and Nginx reverse-proxies them to the internal API container app.
-- **Internal API (`abhijeetsite-api`)**:
-  - Exposes port `8080` (internal ingress). Only accessible within the Container Apps Environment.
-  - Built **without a Dockerfile** using **.NET SDK container publishing** (`/t:PublishContainer`).
-  - Container-ready properties (repository name and exposed ports) are configured directly in the `AbhijeetSite.Api.csproj` project file.
-
-### Prerequisites
-
-- [Azure CLI](https://learn.microsoft.com/en-us/cli/azure/install-azure-cli) installed.
-- Access to an Azure Subscription with permissions to create Resource Groups, Managed Identities, ACRs, and ACA environments.
-
-### Local CLI Deployment Flow
-
-> [!NOTE]
-> The Azure resources (Resource Group, ACR, ACA Environment, User-Assigned Managed Identity with `AcrPull` permission, and both Container Apps themselves) are assumed to have been created beforehand (e.g. manually via the Azure Portal or through Infrastructure as Code (IaC) templates).
-
-Deployment scripts are provided in the `/deploy` folder to build and push container images and update the Container Apps.
-
-For **Windows (PowerShell)**:
-1. **Azure Login**
-   ```powershell
-   az login
-   ```
-2. **Build and Push Container Images**
-   ```powershell
-   .\deploy\build-and-push-images.ps1 [optional-tag]
-   ```
-3. **Update Existing Container Apps**
-   ```powershell
-   .\deploy\update-container-apps.ps1 [optional-tag]
-   ```
-
-For **Linux / macOS / Git Bash**:
-1. **Azure Login**
-   ```bash
-   az login
-   ```
-2. **Build and Push Container Images**
-   ```bash
-   ./deploy/build-and-push-images.sh [optional-tag]
-   ```
-3. **Update Existing Container Apps**
-   ```bash
-   ./deploy/update-container-apps.sh [optional-tag]
-   ```
+In development, OpenAPI and Scalar are mapped by the API project.
 
 ---
 
-### GitHub Actions CI/CD Pipeline
+## Validation
 
-A workflow is available in `.github/workflows/deploy-aca.yml` to automatically build, push, and deploy new releases on pushes to the `main` branch.
+Run backend tests:
 
-#### Configuration Required
+```powershell
+dotnet test
+```
 
-1. **GitHub Secrets**:
-   - `AZURE_CLIENT_ID`: The application (client) ID of a Microsoft Entra ID App Registration configured with Federated Credentials for OIDC.
-   - `AZURE_TENANT_ID`: The directory (tenant) ID of your Entra ID tenant.
-   - `AZURE_SUBSCRIPTION_ID`: The Azure Subscription ID.
+Run frontend checks:
 
-2. **GitHub Variables**:
-   - `RESOURCE_GROUP`: `rg-abhijeetsite-dev`
-   - `ACR_NAME`: `acrabhijeetsitedev`
-   - `ACR_LOGIN_SERVER`: `acrabhijeetsitedev.azurecr.io`
-   - `API_APP`: `abhijeetsite-api`
-   - `WEB_APP`: `abhijeetsite-web`
+```powershell
+cd src\AbhijeetSite.Web
+npm run build
+npm run lint
+```
+
+The solution file currently includes the API, AppHost, ServiceDefaults, and API test projects. The React project is a Vite/npm project under `src/AbhijeetSite.Web`, so validate it with npm scripts.
+
+---
+
+## Architecture Notes
+
+| Decision | Current implementation | Tradeoff |
+|---|---|---|
+| Feature slices over technical layers | API endpoints and DTOs are grouped under `Features/Home` and `Features/Profile`. | Keeps small vertical features easy to reason about; avoid expanding into CQRS until real complexity exists. |
+| In-process profile content | `ProfileContentProvider` owns curated profile data. | Fast and simple for a personal profile; persistence becomes necessary for articles, editing, comments, or admin workflows. |
+| Relative frontend API calls | Browser calls `/api/*`; local Vite and production Nginx provide the proxy. | Avoids browser-visible API host configuration and aligns local/prod routing. |
+| API-owned future auth | Planned in `docs/implementation-plan/iteration-02-external-login.md`. | Keeps OAuth secrets and callback validation out of React. |
+| Published read model for future articles | Planned in `docs/implementation-plan/iteration-04-publishing-pipeline.md`. | Separates public reads from draft/admin workflows. |
+
+---
+
+## Deployment
+
+The deployed topology is:
+
+| Component | Azure role |
+|---|---|
+| `abhijeetsite-web` | Public Azure Container App running Nginx and static Vite assets on port `80`. |
+| `abhijeetsite-api` | Internal Azure Container App running ASP.NET Core on port `8080`. |
+| Azure Container Registry | Stores API and Web images. |
+| Nginx `API_UPSTREAM` | Runtime environment variable pointing the Web app to the internal API FQDN. |
+
+Local cloud-build helper:
+
+```powershell
+.\deploy\build-and-push-images.ps1 [optional-image-tag]
+```
+
+GitHub Actions workflows:
+
+| Workflow | Trigger | Responsibility |
+|---|---|---|
+| `publish-images.yml` | Push to `main` or manual trigger | Build and publish API/Web images to ACR. |
+| `deploy-aca.yml` | Manual trigger | Deploy a supplied image tag to Azure Container Apps. |
+
+Required GitHub secrets:
+
+| Secret | Purpose |
+|---|---|
+| `AZURE_CLIENT_ID` | Entra application client ID for OIDC login. |
+| `AZURE_TENANT_ID` | Entra tenant ID. |
+| `AZURE_SUBSCRIPTION_ID` | Azure subscription ID. |
+
+Required GitHub variables:
+
+| Variable | Purpose |
+|---|---|
+| `RESOURCE_GROUP` | Azure resource group. |
+| `ACR_NAME` | Azure Container Registry name. |
+| `ACR_LOGIN_SERVER` | Registry login server. |
+| `WEB_APP` | Web image repository name. |
+| `API_APP` | Optional API Container App override used by deployment workflow. |
+| `WEB_APP_CONTAINER_NAME` | Optional Web Container App override used by deployment workflow. |
+
+See `docs/deploy-github-actions.md` for the detailed Azure setup, OIDC trust configuration, Nginx HTTPS upstream behavior, custom domain notes, and troubleshooting.
+
+---
+
+## Roadmap
+
+The publishing-platform plan is tracked in `docs/implementation-plan/`:
+
+| Iteration | Outcome |
+|---|---|
+| 00 | Architecture baseline and cross-cutting decisions. |
+| 01 | Persistence foundation. |
+| 02 | External login. |
+| 03 | MDX article drafting and preview. |
+| 04 | Publishing pipeline. |
+| 05 | Authenticated comments with moderation. |
+| 06 | LinkedIn integration and production hardening. |
+
+Until those iterations land, this repository should be treated as a deployed personal profile site plus an implementation plan for the larger publishing platform.
