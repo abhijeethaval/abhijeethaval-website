@@ -18,9 +18,9 @@ The current production-facing capability is a curated professional profile site.
 | Public experience | Single-page profile site with hero, about, experience, and education sections. |
 | API surface | `GET /api/profile` for the full profile and `GET /api/home/summary` for backward-compatible summary data. |
 | Frontend data flow | React loads `/api/profile` through a relative API client. Vite proxies `/api` during local development; Nginx proxies `/api` in Azure. |
-| Backend data source | Curated in-process profile content in `ProfileContentProvider`; no database yet. |
+| Backend data source | Curated in-process profile content in `ProfileContentProvider`; PostgreSQL persistence baseline for publishing modules. |
 | Observability | Aspire service defaults, OpenTelemetry wiring, health endpoints, and development OpenAPI/Scalar UI. |
-| Persistence/auth/articles | Planned, not implemented. See `docs/implementation-plan/`. |
+| Persistence/auth/articles | Persistence foundation implemented for identity, articles, and comments; auth and public publishing workflows remain planned. |
 | Deployment | Containerized API and Web images deployed to Azure Container Apps. |
 
 ---
@@ -53,6 +53,7 @@ docs/
 |---|---|
 | .NET SDK | `10.0.x` |
 | .NET Aspire workload | Required for `AbhijeetSite.AppHost` |
+| Container runtime | Required for Aspire-managed PostgreSQL and Testcontainers-backed integration tests |
 | Node.js | Node 20+ recommended |
 | npm | Required for `src/AbhijeetSite.Web` |
 | Azure CLI | Required only for Azure deployment workflows from a local machine |
@@ -84,6 +85,8 @@ Aspire starts:
 
 - API service named `api`
 - Vite development server named `web`
+- PostgreSQL server named `postgres`
+- PostgreSQL database named `abhijeetsite-db`
 - Aspire dashboard with logs, health, traces, and resource endpoints
 
 The AppHost passes the API endpoint to Vite through `VITE_API_URL`, and `vite.config.ts` proxies `/api` to that backend.
@@ -122,6 +125,8 @@ Run backend tests:
 dotnet test
 ```
 
+The API integration tests use Testcontainers PostgreSQL. Tests that require Docker are skipped when a container runtime is not available.
+
 Run frontend checks:
 
 ```powershell
@@ -138,8 +143,9 @@ The solution file currently includes the API, AppHost, ServiceDefaults, and API 
 
 | Decision | Current implementation | Tradeoff |
 |---|---|---|
-| Feature slices over technical layers | API endpoints and DTOs are grouped under `Features/Home` and `Features/Profile`. | Keeps small vertical features easy to reason about; avoid expanding into CQRS until real complexity exists. |
+| Modular monolith with feature slices | Runtime code is grouped by module under `Features`: profile/home today, with identity, articles, and comments persistence modules started for publishing. | Makes boundaries visible while keeping one deployable unit. |
 | In-process profile content | `ProfileContentProvider` owns curated profile data. | Fast and simple for a personal profile; persistence becomes necessary for articles, editing, comments, or admin workflows. |
+| PostgreSQL persistence foundation | Aspire wires PostgreSQL locally; EF Core maps identity, articles, and comments to separate schemas through one `AppDbContext`. | Demonstrates module boundaries without prematurely splitting services or adding repository abstractions. |
 | Relative frontend API calls | Browser calls `/api/*`; local Vite and production Nginx provide the proxy. | Avoids browser-visible API host configuration and aligns local/prod routing. |
 | API-owned future auth | Planned in `docs/implementation-plan/iteration-02-external-login.md`. | Keeps OAuth secrets and callback validation out of React. |
 | Published read model for future articles | Planned in `docs/implementation-plan/iteration-04-publishing-pipeline.md`. | Separates public reads from draft/admin workflows. |
@@ -207,4 +213,4 @@ The publishing-platform plan is tracked in `docs/implementation-plan/`:
 | 05 | Authenticated comments with moderation. |
 | 06 | LinkedIn integration and production hardening. |
 
-Until those iterations land, this repository should be treated as a deployed personal profile site plus an implementation plan for the larger publishing platform.
+Until the remaining iterations land, this repository should be treated as a deployed personal profile site plus a persistence foundation for the larger publishing platform.
