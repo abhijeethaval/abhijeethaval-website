@@ -1,11 +1,14 @@
 events {
+    # Maximum concurrent connections this Nginx worker can keep open.
     worker_connections 1024;
 }
 
 http {
+    # Load standard MIME mappings so CSS, JS, images, and fonts get correct Content-Type values.
     include       /etc/nginx/mime.types;
     default_type  application/octet-stream;
 
+    # Access log shape used by the container for request diagnostics.
     log_format  main  '$remote_addr - $remote_user [$time_local] "$request" '
                       '$status $body_bytes_sent "$http_referer" '
                       '"$http_user_agent" "$http_x_forwarded_for"';
@@ -17,23 +20,29 @@ http {
     keepalive_timeout  65;
 
     server {
+        # Azure Container Apps sends traffic to the container on port 80.
         listen       80;
         server_name  localhost;
 
+        # Serve the built Vite/React app from the Nginx image filesystem.
         location / {
             root   /usr/share/nginx/html;
             index  index.html index.htm;
+            # If no static file exists, return index.html so client-side routes work.
             try_files $uri $uri/ /index.html;
         }
 
-        # Reverse proxy /api/* to the internal API container app
+        # Reverse proxy /api/* to the internal API container app from API_UPSTREAM.
         location /api/ {
             proxy_pass ${API_UPSTREAM}/api/;
             proxy_http_version 1.1;
+            # Preserve upgrade semantics for protocols that need an HTTP/1.1 connection upgrade.
             proxy_set_header Upgrade $http_upgrade;
             proxy_set_header Connection 'upgrade';
+            # Send the upstream host, not the public frontend host, to the API backend.
             proxy_set_header Host $proxy_host;
             proxy_cache_bypass $http_upgrade;
+            # Enable TLS SNI when API_UPSTREAM is an HTTPS endpoint.
             proxy_ssl_server_name on;
             proxy_ssl_name $proxy_host;
         }
