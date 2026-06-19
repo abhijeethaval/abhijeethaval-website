@@ -13,7 +13,7 @@ interface ArchitectureDecision {
 }
 
 const SYSTEM_NODES: ReadonlyArray<SystemNode> = [
-  { label: 'React + Vite', detail: 'Public profile and architecture UI served by Nginx.' },
+  { label: 'React web app', detail: 'Public profile and architecture UI served by Nginx.' },
   { label: 'ASP.NET Core API', detail: 'Minimal APIs expose profile data and future publishing workflows.' },
   { label: '.NET Aspire', detail: 'Local orchestration, service defaults, health checks, and telemetry wiring.' },
   { label: 'PostgreSQL', detail: 'Durable identity, article, comment, and publishing state.' },
