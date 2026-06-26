@@ -17,6 +17,7 @@ public static class ArticlesErrors
     private const string SummaryRequiredCode = "articles.summary.required";
     private const string MdxSourceRequiredCode = "articles.mdxSource.required";
     private const string PersistenceFailureCode = "articles.persistence.failure";
+    private const string ReadFailureCode = "articles.read.failure";
 
     /// <summary>
     /// Creates an invalid slug validation error.
@@ -65,5 +66,16 @@ public static class ArticlesErrors
     public static Error PersistenceFailure(string message)
     {
         return new Error(PersistenceFailureCode, message, ErrorCategory.Infrastructure);
+    }
+
+    /// <summary>
+    /// Creates a public article read failure error.
+    /// </summary>
+    public static Error ReadFailure()
+    {
+        return new Error(
+            ReadFailureCode,
+            "Published articles could not be loaded. Verify the PostgreSQL connection and retry.",
+            ErrorCategory.Infrastructure);
     }
 }

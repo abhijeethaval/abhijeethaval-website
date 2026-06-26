@@ -1,6 +1,6 @@
 import React from 'react';
 
-type ActiveSection = 'architecture' | 'none' | 'profile';
+type ActiveSection = 'architecture' | 'articles' | 'none' | 'profile';
 
 interface SiteHeaderProps {
   activeSection: ActiveSection;
@@ -45,6 +45,7 @@ const getNavigationLinks = (activeSection: ActiveSection): ReadonlyArray<Navigat
       label: 'Architecture',
       isActive: activeSection === 'architecture',
     },
+    { href: '/articles', label: 'Articles', isActive: activeSection === 'articles' },
     { href: `${homePrefix}#education`, label: 'Education', isActive: false },
   ];
 };

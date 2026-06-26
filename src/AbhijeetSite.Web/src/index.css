@@ -448,6 +448,123 @@ button {
   padding-top: calc(var(--header-height) + 64px);
 }
 
+.articles-hero,
+.article-header {
+  padding-top: calc(var(--header-height) + 80px);
+}
+
+.articles-hero {
+  background:
+    linear-gradient(135deg, rgba(79, 209, 180, 0.12), rgba(242, 184, 75, 0.06)),
+    var(--background);
+}
+
+.articles-heading {
+  max-width: 860px;
+}
+
+.articles-heading h1,
+.article-header h1 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(46px, 7vw, 84px);
+  line-height: 1.04;
+}
+
+.articles-heading > p:last-child,
+.article-summary {
+  max-width: 760px;
+  margin: 24px 0 0;
+  color: var(--text-secondary);
+  font-size: 18px;
+  line-height: 1.75;
+}
+
+.articles-list-section,
+.article-body-section {
+  background: var(--surface);
+}
+
+.articles-list {
+  display: grid;
+  gap: 18px;
+}
+
+.article-card {
+  border-top: 1px solid var(--border-strong);
+  padding: 28px 0 10px;
+}
+
+.article-card time,
+.article-back-link {
+  color: var(--accent-warm);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.article-card h2 {
+  max-width: 800px;
+  margin: 14px 0 0;
+  font-family: var(--font-display);
+  font-size: clamp(28px, 4vw, 42px);
+}
+
+.article-card h2 a:hover,
+.article-read-link:hover,
+.article-back-link:hover {
+  color: var(--accent);
+}
+
+.article-card p {
+  max-width: 760px;
+  margin: 14px 0 0;
+  color: var(--text-secondary);
+  line-height: 1.75;
+}
+
+.article-read-link {
+  display: inline-block;
+  margin-top: 20px;
+  color: var(--accent);
+  font-weight: 800;
+}
+
+.empty-articles {
+  margin: 0;
+  background: var(--surface);
+  color: var(--text-secondary);
+  padding: 80px 20px;
+  text-align: center;
+}
+
+.article-shell {
+  width: min(100%, 780px);
+  margin: 0 auto;
+}
+
+.article-back-link {
+  display: inline-block;
+  margin-bottom: 48px;
+}
+
+.article-body {
+  color: var(--text-secondary);
+  font-size: 18px;
+  line-height: 1.85;
+}
+
+.article-body h2 {
+  margin: 56px 0 16px;
+  color: var(--text-primary);
+  font-family: var(--font-display);
+  font-size: 34px;
+  line-height: 1.2;
+}
+
+.article-body p {
+  margin: 0 0 24px;
+}
+
 .architecture-hero-grid {
   display: grid;
   grid-template-columns: minmax(0, 0.92fr) minmax(360px, 1.08fr);
@@ -695,7 +812,9 @@ button {
   }
 
   .hero-copy h1,
-  .architecture-hero-copy h1 {
+  .architecture-hero-copy h1,
+  .articles-heading h1,
+  .article-header h1 {
     font-size: 38px;
     line-height: 1.12;
     overflow-wrap: anywhere;

@@ -1,3 +1,4 @@
+using AbhijeetSite.Api.Features.Articles;
 using AbhijeetSite.Api.Features.Home;
 using AbhijeetSite.Api.Features.Profile;
 using AbhijeetSite.Api.Infrastructure.Persistence;
@@ -16,6 +17,8 @@ builder.Services.AddSingleton<IApplicationClock, SystemApplicationClock>();
 builder.Services.AddPersistence(builder.Configuration);
 
 var app = builder.Build();
+
+await app.InitializeDatabaseAsync();
 
 app.UseCors(policy => policy
     .AllowAnyOrigin()
@@ -51,6 +54,7 @@ if (Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER") != "true")
 // Register the endpoints from the Home feature slice
 app.MapHomeEndpoints();
 app.MapProfileEndpoints();
+app.MapArticleEndpoints();
 
 app.Run();
 

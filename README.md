@@ -7,7 +7,7 @@ Personal website for Abhijeet Haval, implemented as a full-stack .NET Aspire app
 - **Orchestration**: .NET Aspire AppHost with service defaults for health, telemetry, and discovery
 - **Deployment**: Azure Container Apps with ACR-hosted container images and GitHub Actions OIDC
 
-The current production-facing capability is a curated professional profile site. The planned next capability is a publishing platform for authenticated article drafting, MDX publishing, and moderated comments.
+The current production-facing capabilities are a curated professional profile and a PostgreSQL-backed public article experience. Authenticated drafting, publishing, and moderated comments remain planned.
 
 ---
 
@@ -15,12 +15,12 @@ The current production-facing capability is a curated professional profile site.
 
 | Area | Current state |
 |---|---|
-| Public experience | Single-page profile site with hero, about, experience, and education sections. |
-| API surface | `GET /api/profile` for the full profile and `GET /api/home/summary` for backward-compatible summary data. |
+| Public experience | Profile, architecture, article list, and article detail pages. |
+| API surface | Profile endpoints plus `GET /api/articles` and `GET /api/articles/{slug}` public reads. |
 | Frontend data flow | React loads `/api/profile` through a relative API client. Vite proxies `/api` during local development; Nginx proxies `/api` in Azure. |
 | Backend data source | Curated in-process profile content in `ProfileContentProvider`; PostgreSQL persistence baseline for publishing modules. |
 | Observability | Aspire service defaults, OpenTelemetry wiring, health endpoints, and development OpenAPI/Scalar UI. |
-| Persistence/auth/articles | Persistence foundation implemented for identity, articles, and comments; auth and public publishing workflows remain planned. |
+| Persistence/auth/articles | PostgreSQL persistence and public published-article reads implemented; auth and owner publishing workflows remain planned. |
 | Deployment | Containerized API and Web images deployed to Azure Container Apps. |
 
 ---
@@ -110,6 +110,8 @@ npm run dev
 |---|---|
 | `GET /api/profile` | Full curated profile: headline, summary, about text, expertise, experience, and education. |
 | `GET /api/home/summary` | Compatibility summary derived from the same profile content source. |
+| `GET /api/articles` | Published article summaries ordered by publication date. |
+| `GET /api/articles/{slug}` | Render-ready published article detail. |
 | `/health` | Health probe endpoint. |
 | `/alive` | Liveness probe endpoint. |
 
@@ -148,7 +150,7 @@ The solution file currently includes the API, AppHost, ServiceDefaults, and API 
 | PostgreSQL persistence foundation | Aspire wires PostgreSQL locally; EF Core maps identity, articles, and comments to separate schemas through one `AppDbContext`. | Demonstrates module boundaries without prematurely splitting services or adding repository abstractions. |
 | Relative frontend API calls | Browser calls `/api/*`; local Vite and production Nginx provide the proxy. | Avoids browser-visible API host configuration and aligns local/prod routing. |
 | API-owned future auth | Planned in `docs/implementation-plan/iteration-02-external-login.md`. | Keeps OAuth secrets and callback validation out of React. |
-| Published read model for future articles | Planned in `docs/implementation-plan/iteration-04-publishing-pipeline.md`. | Separates public reads from draft/admin workflows. |
+| Published article read model | Public endpoints query only render-ready `PublishedArticle` records in `Published` state. | Separates authoring risk from public reads; the owner publishing workflow remains future work. |
 
 ---
 
@@ -213,4 +215,4 @@ The publishing-platform plan is tracked in `docs/implementation-plan/`:
 | 05 | Authenticated comments with moderation. |
 | 06 | LinkedIn integration and production hardening. |
 
-Until the remaining iterations land, this repository should be treated as a deployed personal profile site plus a persistence foundation for the larger publishing platform.
+Until the remaining iterations land, this repository should be treated as a deployed profile and public article site plus the persistence foundation for authenticated authoring and comments.
