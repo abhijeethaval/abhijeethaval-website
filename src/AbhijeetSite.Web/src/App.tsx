@@ -1,10 +1,14 @@
 import React from 'react';
 import { ArchitecturePage } from './features/architecture/ArchitecturePage';
+import { ArticleDetailPage } from './features/articles/ArticleDetailPage';
+import { ArticlesPage } from './features/articles/ArticlesPage';
 import { HomePage } from './features/home/HomePage';
 import { SiteHeader } from './shared/navigation/SiteHeader';
 
 const HOME_PATH = '/';
 const ARCHITECTURE_PATH = '/architecture';
+const ARTICLES_PATH = '/articles';
+const ARTICLE_PATH_PREFIX = `${ARTICLES_PATH}/`;
 
 function App(): React.ReactElement {
   const routePath: string = getRoutePath();
@@ -15,6 +19,15 @@ function App(): React.ReactElement {
 
   if (routePath === ARCHITECTURE_PATH) {
     return <ArchitecturePage />;
+  }
+
+  if (routePath === ARTICLES_PATH) {
+    return <ArticlesPage />;
+  }
+
+  if (routePath.startsWith(ARTICLE_PATH_PREFIX)) {
+    const slug: string = routePath.slice(ARTICLE_PATH_PREFIX.length);
+    return slug.length > 0 ? <ArticleDetailPage slug={slug} /> : <NotFoundPage />;
   }
 
   return <NotFoundPage />;

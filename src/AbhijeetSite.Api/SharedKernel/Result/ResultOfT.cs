@@ -37,12 +37,13 @@ public readonly struct Result<TValue>
     {
         get
         {
-            if (!IsSuccess || _value is null)
+            if (!IsSuccess)
             {
                 throw new InvalidOperationException("Cannot read Value from a failed result.");
             }
 
-            return _value;
+            // Successful nullable result payloads are valid for optional read models.
+            return _value!;
         }
     }
 

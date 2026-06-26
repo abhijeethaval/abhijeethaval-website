@@ -1,5 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using AbhijeetSite.Api.Features.Articles.CreateArticleDraft;
+using AbhijeetSite.Api.Features.Articles.GetPublishedArticle;
+using AbhijeetSite.Api.Features.Articles.GetPublishedArticles;
 
 namespace AbhijeetSite.Api.Infrastructure.Persistence;
 
@@ -25,6 +27,8 @@ public static class PersistenceServiceCollectionExtensions
             }
         });
         services.AddScoped<CreateArticleDraftHandler>();
+        services.AddScoped<GetPublishedArticleHandler>();
+        services.AddScoped<GetPublishedArticlesHandler>();
 
         return services;
     }

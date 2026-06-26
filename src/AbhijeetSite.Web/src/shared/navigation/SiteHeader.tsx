@@ -1,6 +1,7 @@
 import React from 'react';
+import { useTheme } from '../theme/ThemeContext';
 
-type ActiveSection = 'architecture' | 'none' | 'profile';
+type ActiveSection = 'architecture' | 'articles' | 'none' | 'profile';
 
 interface SiteHeaderProps {
   activeSection: ActiveSection;
@@ -15,6 +16,7 @@ interface NavigationLink {
 export const SiteHeader: React.FC<SiteHeaderProps> = ({ activeSection }) => {
   const links: ReadonlyArray<NavigationLink> = getNavigationLinks(activeSection);
   const homeHref: string = activeSection === 'profile' ? '#home' : '/';
+  const { theme, toggleTheme } = useTheme();
 
   return (
     <header className="site-header">
@@ -30,6 +32,15 @@ export const SiteHeader: React.FC<SiteHeaderProps> = ({ activeSection }) => {
           </a>
         ))}
       </nav>
+      <button
+        className="theme-toggle"
+        type="button"
+        aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} theme`}
+        aria-pressed={theme === 'dark'}
+        onClick={toggleTheme}
+      >
+        {theme === 'light' ? 'Dark' : 'Light'}
+      </button>
     </header>
   );
 };
@@ -45,6 +56,7 @@ const getNavigationLinks = (activeSection: ActiveSection): ReadonlyArray<Navigat
       label: 'Architecture',
       isActive: activeSection === 'architecture',
     },
+    { href: '/articles', label: 'Articles', isActive: activeSection === 'articles' },
     { href: `${homePrefix}#education`, label: 'Education', isActive: false },
   ];
 };
