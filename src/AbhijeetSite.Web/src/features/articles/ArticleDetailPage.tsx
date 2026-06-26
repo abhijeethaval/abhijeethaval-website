@@ -62,7 +62,7 @@ const ArticleContent: React.FC<ArticleContentProps> = ({ article }) => {
       <main className="article-page">
         <header className="article-header section-band">
           <div className="article-shell">
-            <a className="article-back-link" href="/articles">← All articles</a>
+            <a className="article-back-link" href="/articles">Back to articles</a>
             <p className="eyebrow">Published {formatArticleDate(article.publishedAt)}</p>
             <h1>{article.title}</h1>
             <p className="article-summary">{article.summary}</p>

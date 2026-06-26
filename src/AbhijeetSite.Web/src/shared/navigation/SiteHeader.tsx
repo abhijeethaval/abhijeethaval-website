@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTheme } from '../theme/ThemeContext';
 
 type ActiveSection = 'architecture' | 'articles' | 'none' | 'profile';
 
@@ -15,6 +16,7 @@ interface NavigationLink {
 export const SiteHeader: React.FC<SiteHeaderProps> = ({ activeSection }) => {
   const links: ReadonlyArray<NavigationLink> = getNavigationLinks(activeSection);
   const homeHref: string = activeSection === 'profile' ? '#home' : '/';
+  const { theme, toggleTheme } = useTheme();
 
   return (
     <header className="site-header">
@@ -30,6 +32,15 @@ export const SiteHeader: React.FC<SiteHeaderProps> = ({ activeSection }) => {
           </a>
         ))}
       </nav>
+      <button
+        className="theme-toggle"
+        type="button"
+        aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} theme`}
+        aria-pressed={theme === 'dark'}
+        onClick={toggleTheme}
+      >
+        {theme === 'light' ? 'Dark' : 'Light'}
+      </button>
     </header>
   );
 };
