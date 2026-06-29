@@ -24,6 +24,7 @@ var app = builder.Build();
 await app.InitializeDatabaseAsync();
 
 app.UseForwardedHeaders();
+app.UseIdentityPublicOrigin();
 
 app.UseCors(policy => policy
     .AllowAnyOrigin()
