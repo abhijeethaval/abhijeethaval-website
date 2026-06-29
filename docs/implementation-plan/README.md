@@ -31,6 +31,12 @@ and the site owner can draft, preview, and publish MDX-based articles.
 | 05 | [Comments](./iteration-05-comments.md) | Add authenticated comments with moderation. |
 | 06 | [LinkedIn And Hardening](./iteration-06-linkedin-and-hardening.md) | Add LinkedIn and production hardening. |
 
+## Runbooks
+
+| Runbook | Purpose |
+|---|---|
+| [Google Login](../google-login.md) | End-to-end Google OAuth setup, Azure configuration, code walkthrough, and production troubleshooting. |
+
 ## Non-Goals Until After Iteration 06
 
 - Public user registration with passwords.

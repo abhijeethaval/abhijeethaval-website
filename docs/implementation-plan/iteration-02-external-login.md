@@ -4,6 +4,8 @@
 
 Implemented as the Google-login baseline. Live Google sign-in still requires Google
 OAuth credentials and a configured callback URL in the Google Cloud console.
+The production setup and code walkthrough are documented in
+[Google Login Runbook](../google-login.md).
 
 ## Goal
 

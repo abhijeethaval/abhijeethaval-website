@@ -57,6 +57,10 @@ flowchart TD
 2. **Cloud-Native Builds (`az acr build`)**: Source directories are packaged and compiled inside Azure Container Registry tasks, freeing local developer environments from running Docker or pulling heavy images.
 3. **Internal Nginx Proxy**: The public frontend (`abhijeetsite-web`) reverse-proxies API requests (`/api/*`) internally over private HTTP to the backend C# API (`abhijeetsite-api`), utilizing a startup-injected `API_UPSTREAM` variable.
 
+For Google OAuth-specific setup, including Google Cloud redirect URIs, API
+Container App secrets, `Auth__PublicOrigin`, and Data Protection key storage, see
+[Google Login Runbook](./google-login.md).
+
 ---
 
 ## Step 1: Create Azure Identity (App Registration)
