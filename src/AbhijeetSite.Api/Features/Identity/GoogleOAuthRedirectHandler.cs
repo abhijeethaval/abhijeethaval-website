@@ -34,11 +34,7 @@ public static class GoogleOAuthRedirectHandler
 
     private static string BuildPublicCallbackUri(string publicOrigin, PathString callbackPath)
     {
-        if (!Uri.TryCreate(publicOrigin, UriKind.Absolute, out Uri? origin))
-        {
-            throw new InvalidOperationException("Auth:PublicOrigin must be an absolute URI.");
-        }
-
+        Uri origin = PublicOriginUri.Parse(publicOrigin);
         UriBuilder builder = new(origin)
         {
             Path = callbackPath.Value ?? string.Empty,
