@@ -235,6 +235,8 @@ To successfully proxy requests to HTTPS upstreams in Azure (and modern cloud env
 1. `proxy_set_header Host $proxy_host;` — Sets the Host header to match the backend domain instead of forwarding the frontend host.
 2. `proxy_ssl_server_name on;` — Explicitly enables SNI for the SSL handshake.
 3. `proxy_ssl_name $proxy_host;` — Sends the correct server name during the handshake.
+4. `proxy_set_header X-Forwarded-Host $host;` — Preserves the public website host for ASP.NET callback URL generation.
+5. `proxy_set_header X-Forwarded-Proto https;` — Preserves the browser-facing HTTPS scheme for OAuth redirects after ACA TLS termination.
 
 Updated `nginx.conf.template` block:
 ```nginx
@@ -244,6 +246,9 @@ Updated `nginx.conf.template` block:
             proxy_set_header Upgrade $http_upgrade;
             proxy_set_header Connection 'upgrade';
             proxy_set_header Host $proxy_host;
+            proxy_set_header X-Forwarded-Host $host;
+            proxy_set_header X-Forwarded-Proto https;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
             proxy_cache_bypass $http_upgrade;
             proxy_ssl_server_name on;
             proxy_ssl_name $proxy_host;
