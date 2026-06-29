@@ -120,6 +120,7 @@ button {
 }
 
 .site-header nav a,
+.auth-button,
 .theme-toggle {
   border-radius: 999px;
   padding: 9px 12px;
@@ -131,8 +132,63 @@ button {
   color: var(--accent-strong);
 }
 
-.theme-toggle {
+.header-actions {
+  display: flex;
   flex: 0 0 auto;
+  gap: 8px;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.auth-status {
+  display: flex;
+  max-width: 260px;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.auth-initial {
+  display: inline-flex;
+  width: 28px;
+  height: 28px;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.auth-user-name {
+  max-width: 116px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.auth-button {
+  display: inline-flex;
+  min-height: 34px;
+  align-items: center;
+  border: 1px solid var(--border);
+  background: var(--surface-subtle);
+  color: var(--text-primary);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.auth-button:hover {
+  border-color: var(--accent);
+  color: var(--accent-strong);
+}
+
+.theme-toggle {
   border: 1px solid var(--border);
   background: var(--surface-subtle);
   color: var(--text-primary);
@@ -760,6 +816,7 @@ button {
   }
 
   .site-header nav a,
+  .auth-button,
   .theme-toggle {
     padding: 8px 10px;
   }
@@ -825,8 +882,16 @@ button {
     display: none;
   }
 
-  .theme-toggle {
+  .header-actions {
     margin-left: auto;
+  }
+
+  .auth-user-name {
+    max-width: 86px;
+  }
+
+  .theme-toggle,
+  .auth-button {
     font-size: 12px;
   }
 

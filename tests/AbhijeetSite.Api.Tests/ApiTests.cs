@@ -11,7 +11,7 @@ public class ApiTests : IClassFixture<WebApplicationFactory<Program>>
     private const string AssociateArchitectStartDate = "Jun 2018";
     private const string AssociateArchitectTitle = "Associate Architect";
     private const string EnterpriseApiSummarySignal = "enterprise APIs";
-    private const string ForwardDeployedHeadlineSignal = "forward-deployed enterprise AI";
+    private const string ForwardDeployedHeadlineSignal = "forward-deployed AI solutions";
     private const string IcertisCompany = "Icertis";
     private const string KitInstitutionSignal = "K.I.T";
     private const string KpmgPocSignal = "KPMG document extraction POC";

@@ -76,4 +76,21 @@ public sealed class User
     {
         return new User(id, displayName, email, avatarUrl, createdAt, isAdmin);
     }
+
+    /// <summary>
+    /// Records a successful external sign-in.
+    /// </summary>
+    public void RecordSignIn(
+        string displayName,
+        string email,
+        string? avatarUrl,
+        DateTimeOffset signedInAt,
+        bool isAdmin)
+    {
+        DisplayName = displayName;
+        Email = email;
+        AvatarUrl = avatarUrl;
+        LastSignedInAt = signedInAt;
+        IsAdmin = isAdmin;
+    }
 }

@@ -27,6 +27,7 @@ public sealed class UserEntityConfiguration : IEntityTypeConfiguration<User>
         builder.Property(user => user.AvatarUrl).HasMaxLength(AvatarUrlMaximumLength);
         builder.Property(user => user.CreatedAt).HasColumnType(TimestampWithTimeZone).IsRequired();
         builder.Property(user => user.LastSignedInAt).HasColumnType(TimestampWithTimeZone).IsRequired();
+        builder.Property(user => user.IsAdmin).IsRequired();
         builder.HasIndex(user => user.Email).IsUnique();
     }
 }

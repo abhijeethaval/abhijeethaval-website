@@ -7,7 +7,7 @@ Personal website for Abhijeet Haval, implemented as a full-stack .NET Aspire app
 - **Orchestration**: .NET Aspire AppHost with service defaults for health, telemetry, and discovery
 - **Deployment**: Azure Container Apps with ACR-hosted container images and GitHub Actions OIDC
 
-The current production-facing capabilities are a curated professional profile and a PostgreSQL-backed public article experience. Authenticated drafting, publishing, and moderated comments remain planned.
+The current production-facing capabilities are a curated professional profile, a PostgreSQL-backed public article experience, and API-owned Google login scaffolding. Authenticated drafting, publishing, and moderated comments remain planned.
 
 ---
 
@@ -16,11 +16,11 @@ The current production-facing capabilities are a curated professional profile an
 | Area | Current state |
 |---|---|
 | Public experience | Profile, architecture, article list, and article detail pages. |
-| API surface | Profile endpoints plus `GET /api/articles` and `GET /api/articles/{slug}` public reads. |
-| Frontend data flow | React loads `/api/profile` through a relative API client. Vite proxies `/api` during local development; Nginx proxies `/api` in Azure. |
+| API surface | Profile endpoints, published article reads, and `/api/auth/*` session endpoints. |
+| Frontend data flow | React loads API data and auth state through relative `/api` calls. Vite proxies `/api` during local development; Nginx proxies `/api` in Azure. |
 | Backend data source | Curated in-process profile content in `ProfileContentProvider`; PostgreSQL persistence baseline for publishing modules. |
 | Observability | Aspire service defaults, OpenTelemetry wiring, health endpoints, and development OpenAPI/Scalar UI. |
-| Persistence/auth/articles | PostgreSQL persistence and public published-article reads implemented; auth and owner publishing workflows remain planned. |
+| Persistence/auth/articles | PostgreSQL persistence, public published-article reads, and API-owned Google auth baseline implemented; owner publishing and comments remain planned. |
 | Deployment | Containerized API and Web images deployed to Azure Container Apps. |
 
 ---
@@ -112,6 +112,9 @@ npm run dev
 | `GET /api/home/summary` | Compatibility summary derived from the same profile content source. |
 | `GET /api/articles` | Published article summaries ordered by publication date. |
 | `GET /api/articles/{slug}` | Render-ready published article detail. |
+| `GET /api/auth/me` | Current local session state for the React shell. |
+| `GET /api/auth/login/google` | Starts backend-owned Google login when Google credentials are configured. |
+| `POST /api/auth/logout` | Clears the local application session cookie. |
 | `/health` | Health probe endpoint. |
 | `/alive` | Liveness probe endpoint. |
 
@@ -149,7 +152,7 @@ The solution file currently includes the API, AppHost, ServiceDefaults, and API 
 | In-process profile content | `ProfileContentProvider` owns curated profile data. | Fast and simple for a personal profile; persistence becomes necessary for articles, editing, comments, or admin workflows. |
 | PostgreSQL persistence foundation | Aspire wires PostgreSQL locally; EF Core maps identity, articles, and comments to separate schemas through one `AppDbContext`. | Demonstrates module boundaries without prematurely splitting services or adding repository abstractions. |
 | Relative frontend API calls | Browser calls `/api/*`; local Vite and production Nginx provide the proxy. | Avoids browser-visible API host configuration and aligns local/prod routing. |
-| API-owned future auth | Planned in `docs/implementation-plan/iteration-02-external-login.md`. | Keeps OAuth secrets and callback validation out of React. |
+| API-owned auth | Cookie auth, Google OAuth wiring, local `User`/`ExternalLogin` upsert, and admin policy constants live in the API. | Keeps OAuth secrets and provider tokens out of React; Google is optional until credentials are configured. |
 | Published article read model | Public endpoints query only render-ready `PublishedArticle` records in `Published` state. | Separates authoring risk from public reads; the owner publishing workflow remains future work. |
 
 ---
@@ -198,6 +201,15 @@ Required GitHub variables:
 | `WEB_APP_CONTAINER_NAME` | Optional Web Container App override used by deployment workflow. |
 
 See `docs/deploy-github-actions.md` for the detailed Azure setup, OIDC trust configuration, Nginx HTTPS upstream behavior, custom domain notes, and troubleshooting.
+
+Runtime auth configuration:
+
+| Setting | Purpose |
+|---|---|
+| `Auth__Google__ClientId` | Google OAuth client ID. Leave empty to keep public endpoints running without Google login. |
+| `Auth__Google__ClientSecret` | Google OAuth client secret. Store as an ACA secret or Key Vault reference. |
+| `Auth__AdminEmails__0` | First verified Google email granted the local `AdminOnly` policy. |
+| `Auth__DataProtectionKeysPath` | Durable ASP.NET Core Data Protection key path. Required when production Google credentials are configured. |
 
 ---
 

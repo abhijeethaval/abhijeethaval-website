@@ -13,14 +13,12 @@ permissions:
 jobs:
   publish:
     runs-on: ubuntu-latest
+    env:
+      API_IMAGE: abhijeetsite-api
+      WEB_IMAGE: ${{ vars.WEB_APP || 'abhijeetsite-web' }}
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
-
-      - name: Setup .NET SDK
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: '10.0.x'
 
       - name: Get short SHA
         id: slug
@@ -33,22 +31,27 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-      - name: Log in to Azure Container Registry
+      - name: Verify Azure Container Registry
         run: |
-          az acr login --name ${{ vars.ACR_NAME }}
+          az acr show \
+            --name ${{ vars.ACR_NAME }} \
+            --query "{loginServer:loginServer, publicNetworkAccess:publicNetworkAccess, provisioningState:provisioningState}" \
+            --output table
 
-      - name: Build and Push API Container Image (.NET SDK)
+      - name: Build and Push API Container Image (ACR Build)
         run: |
-          dotnet publish src/AbhijeetSite.Api/AbhijeetSite.Api.csproj \
-            -c Release \
-            /t:PublishContainer \
-            -p:ContainerRegistry=${{ vars.ACR_LOGIN_SERVER }} \
-            -p:ContainerImageTag=${{ env.SHA_SHORT }}
+          az acr build \
+            --registry ${{ vars.ACR_NAME }} \
+            --resource-group ${{ vars.RESOURCE_GROUP }} \
+            --image "$API_IMAGE:$SHA_SHORT" \
+            --file src/AbhijeetSite.Api/Dockerfile \
+            .
 
       - name: Build and Push Web Container Image (ACR Build)
         run: |
           az acr build \
             --registry ${{ vars.ACR_NAME }} \
             --resource-group ${{ vars.RESOURCE_GROUP }} \
-            --image ${{ vars.WEB_APP }}:${{ env.SHA_SHORT }} \
+            --image "$WEB_IMAGE:$SHA_SHORT" \
+            --file src/AbhijeetSite.Web/Dockerfile \
             src/AbhijeetSite.Web
