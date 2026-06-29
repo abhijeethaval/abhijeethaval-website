@@ -22,7 +22,8 @@ public static class IdentityServiceCollectionExtensions
         IWebHostEnvironment environment)
     {
         IConfigurationSection section = configuration.GetSection(IdentityAuthenticationOptions.SectionName);
-        GoogleExternalLoginOptions google = GetGoogleOptions(section);
+        IdentityAuthenticationOptions identityOptions = GetIdentityOptions(section);
+        GoogleExternalLoginOptions google = identityOptions.Google;
         services.Configure<IdentityAuthenticationOptions>(section);
         services.ConfigureForwardedHeaders();
         services.ConfigureDataProtection(section, environment, google);
@@ -31,7 +32,7 @@ public static class IdentityServiceCollectionExtensions
             .AddAuthentication(IdentityAuthenticationSchemes.ApplicationCookie)
             .AddCookie(IdentityAuthenticationSchemes.ApplicationCookie, options =>
                 ConfigureCookie(options, environment));
-        AddGoogleIfConfigured(authentication, google);
+        AddGoogleIfConfigured(authentication, identityOptions);
         services.AddIdentityAuthorization();
 
         return services;
@@ -113,17 +114,19 @@ public static class IdentityServiceCollectionExtensions
 
     private static void AddGoogleIfConfigured(
         AuthenticationBuilder authentication,
-        GoogleExternalLoginOptions google)
+        IdentityAuthenticationOptions identityOptions)
     {
+        GoogleExternalLoginOptions google = identityOptions.Google;
         if (google.HasCredentials)
         {
             authentication.AddOAuth(IdentityAuthenticationSchemes.Google, options =>
-                ConfigureGoogle(options, google));
+                ConfigureGoogle(options, identityOptions));
         }
     }
 
-    private static void ConfigureGoogle(OAuthOptions options, GoogleExternalLoginOptions google)
+    private static void ConfigureGoogle(OAuthOptions options, IdentityAuthenticationOptions identityOptions)
     {
+        GoogleExternalLoginOptions google = identityOptions.Google;
         options.ClientId = google.ClientId;
         options.ClientSecret = google.ClientSecret;
         options.CallbackPath = "/api/auth/callback/google";
@@ -138,13 +141,22 @@ public static class IdentityServiceCollectionExtensions
         options.Scope.Add("profile");
         options.Scope.Add("email");
         options.Events.OnCreatingTicket = GoogleOAuthTicketHandler.HandleCreatingTicketAsync;
+        options.Events.OnRedirectToAuthorizationEndpoint = context =>
+        {
+            string redirectUri = GoogleOAuthRedirectHandler.RewriteRedirectUri(
+                context.RedirectUri,
+                identityOptions.PublicOrigin,
+                options.CallbackPath);
+            context.Response.Redirect(redirectUri);
+            return Task.CompletedTask;
+        };
     }
 
-    private static GoogleExternalLoginOptions GetGoogleOptions(IConfigurationSection authSection)
+    private static IdentityAuthenticationOptions GetIdentityOptions(IConfigurationSection authSection)
     {
-        GoogleExternalLoginOptions google = new();
-        authSection.GetSection(nameof(IdentityAuthenticationOptions.Google)).Bind(google);
-        return google;
+        IdentityAuthenticationOptions options = new();
+        authSection.Bind(options);
+        return options;
     }
 
     private static void AddIdentityAuthorization(this IServiceCollection services)

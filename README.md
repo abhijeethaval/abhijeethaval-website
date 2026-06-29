@@ -206,6 +206,7 @@ Runtime auth configuration:
 
 | Setting | Purpose |
 |---|---|
+| `Auth__PublicOrigin` | Public browser-facing origin for OAuth redirects, for example `https://abhijeethaval.com`. |
 | `Auth__Google__ClientId` | Google OAuth client ID. Leave empty to keep public endpoints running without Google login. |
 | `Auth__Google__ClientSecret` | Google OAuth client secret. Store as an ACA secret or Key Vault reference. |
 | `Auth__AdminEmails__0` | First verified Google email granted the local `AdminOnly` policy. |

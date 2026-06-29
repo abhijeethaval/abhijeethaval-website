@@ -48,6 +48,7 @@ session state.
 
 | Setting | Local Source | Production Source |
 |---|---|---|
+| Public OAuth origin | unset or local origin | `https://abhijeethaval.com` environment variable |
 | Google client ID | user-secrets | ACA secret or Key Vault reference |
 | Google client secret | user-secrets | ACA secret or Key Vault reference |
 | Admin email allowlist | `appsettings.Development` | ACA environment variable or secret |

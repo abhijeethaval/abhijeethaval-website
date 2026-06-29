@@ -16,6 +16,11 @@ public sealed class IdentityAuthenticationOptions
     public GoogleExternalLoginOptions Google { get; set; } = new();
 
     /// <summary>
+    /// Public browser-facing origin used when constructing external authentication callbacks.
+    /// </summary>
+    public string PublicOrigin { get; set; } = string.Empty;
+
+    /// <summary>
     /// File-system path used to persist ASP.NET Core Data Protection keys.
     /// </summary>
     public string DataProtectionKeysPath { get; set; } = string.Empty;
