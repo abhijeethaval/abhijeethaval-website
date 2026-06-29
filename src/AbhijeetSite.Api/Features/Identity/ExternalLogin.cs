@@ -62,4 +62,12 @@ public sealed class ExternalLogin
     {
         return new ExternalLogin(id, userId, provider, providerSubject, emailAtLogin);
     }
+
+    /// <summary>
+    /// Records the latest provider email observed during sign-in.
+    /// </summary>
+    public void RecordSignIn(string emailAtLogin)
+    {
+        EmailAtLogin = emailAtLogin;
+    }
 }

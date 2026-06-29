@@ -1,4 +1,5 @@
 import React from 'react';
+import { AuthStatus } from '../../features/auth/AuthStatus';
 import { useTheme } from '../theme/ThemeContext';
 
 type ActiveSection = 'architecture' | 'articles' | 'none' | 'profile';
@@ -32,15 +33,18 @@ export const SiteHeader: React.FC<SiteHeaderProps> = ({ activeSection }) => {
           </a>
         ))}
       </nav>
-      <button
-        className="theme-toggle"
-        type="button"
-        aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} theme`}
-        aria-pressed={theme === 'dark'}
-        onClick={toggleTheme}
-      >
-        {theme === 'light' ? 'Dark' : 'Light'}
-      </button>
+      <div className="header-actions">
+        <AuthStatus />
+        <button
+          className="theme-toggle"
+          type="button"
+          aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} theme`}
+          aria-pressed={theme === 'dark'}
+          onClick={toggleTheme}
+        >
+          {theme === 'light' ? 'Dark' : 'Light'}
+        </button>
+      </div>
     </header>
   );
 };

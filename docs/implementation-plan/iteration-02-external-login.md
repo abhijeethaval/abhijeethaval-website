@@ -1,5 +1,10 @@
 # Iteration 02 - External Login
 
+## Status
+
+Implemented as the Google-login baseline. Live Google sign-in still requires Google
+OAuth credentials and a configured callback URL in the Google Cloud console.
+
 ## Goal
 
 Add external login with Google first and a provider abstraction that can support LinkedIn
@@ -45,14 +50,14 @@ session state.
 |---|---|---|
 | Google client ID | user-secrets | ACA secret or Key Vault reference |
 | Google client secret | user-secrets | ACA secret or Key Vault reference |
-| Cookie signing keys | dev defaults | production key persistence strategy |
-| Public origin | appsettings.Development | environment variable |
+| Admin email allowlist | `appsettings.Development` | ACA environment variable or secret |
+| Data Protection keys | repo-local ignored `artifacts` path | durable mounted path |
 
 ## Tests
 
 - `/api/auth/me` returns anonymous state before login.
 - Existing home endpoint remains public.
-- Admin-only test endpoint rejects anonymous users.
+- `AdminOnly` policy rejects anonymous users.
 - External-login upsert logic is unit tested with provider claims.
 
 ## Acceptance Criteria

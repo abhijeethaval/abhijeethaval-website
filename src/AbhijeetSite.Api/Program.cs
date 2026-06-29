@@ -1,8 +1,10 @@
 using AbhijeetSite.Api.Features.Articles;
 using AbhijeetSite.Api.Features.Home;
+using AbhijeetSite.Api.Features.Identity;
 using AbhijeetSite.Api.Features.Profile;
 using AbhijeetSite.Api.Infrastructure.Persistence;
 using AbhijeetSite.Api.SharedKernel.Time;
+using Microsoft.AspNetCore.HttpOverrides;
 using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -15,10 +17,13 @@ builder.Services.AddCors();
 builder.Services.AddOpenApi();
 builder.Services.AddSingleton<IApplicationClock, SystemApplicationClock>();
 builder.Services.AddPersistence(builder.Configuration);
+builder.Services.AddIdentityAuthentication(builder.Configuration, builder.Environment);
 
 var app = builder.Build();
 
 await app.InitializeDatabaseAsync();
+
+app.UseForwardedHeaders();
 
 app.UseCors(policy => policy
     .AllowAnyOrigin()
@@ -51,10 +56,14 @@ if (Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER") != "true")
     app.UseHttpsRedirection();
 }
 
+app.UseAuthentication();
+app.UseAuthorization();
+
 // Register the endpoints from the Home feature slice
 app.MapHomeEndpoints();
 app.MapProfileEndpoints();
 app.MapArticleEndpoints();
+app.MapIdentityEndpoints();
 
 app.Run();
 

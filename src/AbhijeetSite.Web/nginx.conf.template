@@ -19,6 +19,11 @@ http {
     sendfile        on;
     keepalive_timeout  65;
 
+    map $http_x_forwarded_proto $proxy_forwarded_proto {
+        default $http_x_forwarded_proto;
+        ''      $scheme;
+    }
+
     server {
         # Azure Container Apps sends traffic to the container on port 80.
         listen       80;
@@ -47,8 +52,11 @@ http {
             # Preserve upgrade semantics for protocols that need an HTTP/1.1 connection upgrade.
             proxy_set_header Upgrade $http_upgrade;
             proxy_set_header Connection 'upgrade';
-            # Send the upstream host, not the public frontend host, to the API backend.
+            # Keep upstream routing intact while forwarding the browser-facing origin to ASP.NET.
             proxy_set_header Host $proxy_host;
+            proxy_set_header X-Forwarded-Host $host;
+            proxy_set_header X-Forwarded-Proto $proxy_forwarded_proto;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
             proxy_cache_bypass $http_upgrade;
             # Enable TLS SNI when API_UPSTREAM is an HTTPS endpoint.
             proxy_ssl_server_name on;
