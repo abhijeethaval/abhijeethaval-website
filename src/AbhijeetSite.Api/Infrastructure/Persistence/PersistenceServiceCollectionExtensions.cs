@@ -1,7 +1,9 @@
 using Microsoft.EntityFrameworkCore;
+using AbhijeetSite.Api.Features.Articles.Admin;
 using AbhijeetSite.Api.Features.Articles.CreateArticleDraft;
 using AbhijeetSite.Api.Features.Articles.GetPublishedArticle;
 using AbhijeetSite.Api.Features.Articles.GetPublishedArticles;
+using AbhijeetSite.Api.Features.Articles.Rendering;
 
 namespace AbhijeetSite.Api.Infrastructure.Persistence;
 
@@ -26,9 +28,14 @@ public static class PersistenceServiceCollectionExtensions
                 options.UseNpgsql(connectionString);
             }
         });
+        services.AddSingleton<ConstrainedMarkdownRenderer>();
         services.AddScoped<CreateArticleDraftHandler>();
         services.AddScoped<GetPublishedArticleHandler>();
         services.AddScoped<GetPublishedArticlesHandler>();
+        services.AddScoped<GetArticleDraftHandler>();
+        services.AddScoped<GetArticleDraftsHandler>();
+        services.AddScoped<PublishArticleDraftHandler>();
+        services.AddScoped<UpdateArticleDraftHandler>();
 
         return services;
     }

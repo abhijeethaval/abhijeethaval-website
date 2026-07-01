@@ -60,6 +60,7 @@ const SignedInStatus: React.FC<SignedInStatusProps> = ({ user, onLogout }) => {
     <div className="auth-status" aria-label="Signed in user">
       <span className="auth-initial" aria-hidden="true">{getInitial(user.displayName)}</span>
       <span className="auth-user-name">{user.displayName}</span>
+      {user.isAdmin ? <a className="auth-button" href="/admin/articles">Admin</a> : null}
       <button className="auth-button" type="button" onClick={handleLogout}>Sign out</button>
     </div>
   );

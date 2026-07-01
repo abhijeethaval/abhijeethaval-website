@@ -15,7 +15,7 @@ var api = builder.AddProject<Projects.AbhijeetSite_Api>("api")
 builder.AddNpmApp("web", "../AbhijeetSite.Web", "dev")
     .WithReference(api)
     .WithEnvironment("VITE_API_URL", api.GetEndpoint("http"))
-    .WithHttpEndpoint(env: "PORT")
+    .WithHttpEndpoint(port: 5173, env: "PORT")
     .WithExternalHttpEndpoints();
 
 builder.Build().Run();

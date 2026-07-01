@@ -11,6 +11,8 @@ namespace AbhijeetSite.Api.Features.Identity;
 /// </summary>
 public static class IdentityServiceCollectionExtensions
 {
+    private const string ApiPathPrefix = "/api";
+    private const string ApiLoginPath = "/api/auth/login";
     private const int SessionLifetimeHours = 8;
 
     /// <summary>
@@ -103,6 +105,34 @@ public static class IdentityServiceCollectionExtensions
         options.SlidingExpiration = true;
         options.LoginPath = "/api/auth/login/google";
         options.AccessDeniedPath = "/api/auth/forbidden";
+        options.Events.OnRedirectToLogin = context =>
+            HandleApiCookieRedirectAsync(context, StatusCodes.Status401Unauthorized);
+        options.Events.OnRedirectToAccessDenied = context =>
+            HandleApiCookieRedirectAsync(context, StatusCodes.Status403Forbidden);
+    }
+
+    private static Task HandleApiCookieRedirectAsync(
+        RedirectContext<CookieAuthenticationOptions> context,
+        int statusCode)
+    {
+        if (IsApiRequest(context.Request.Path) && !IsLoginRequest(context.Request.Path))
+        {
+            context.Response.StatusCode = statusCode;
+            return Task.CompletedTask;
+        }
+
+        context.Response.Redirect(context.RedirectUri);
+        return Task.CompletedTask;
+    }
+
+    private static bool IsApiRequest(PathString path)
+    {
+        return path.StartsWithSegments(ApiPathPrefix);
+    }
+
+    private static bool IsLoginRequest(PathString path)
+    {
+        return path.StartsWithSegments(ApiLoginPath);
     }
 
     private static CookieSecurePolicy GetSecurePolicy(IWebHostEnvironment environment)

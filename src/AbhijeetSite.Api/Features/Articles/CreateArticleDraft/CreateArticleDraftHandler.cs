@@ -13,14 +13,19 @@ public sealed class CreateArticleDraftHandler
 {
     private readonly AppDbContext _dbContext;
     private readonly IApplicationClock _clock;
+    private readonly ILogger<CreateArticleDraftHandler> _logger;
 
     /// <summary>
     /// Creates the handler.
     /// </summary>
-    public CreateArticleDraftHandler(AppDbContext dbContext, IApplicationClock clock)
+    public CreateArticleDraftHandler(
+        AppDbContext dbContext,
+        IApplicationClock clock,
+        ILogger<CreateArticleDraftHandler> logger)
     {
         _dbContext = dbContext;
         _clock = clock;
+        _logger = logger;
     }
 
     /// <summary>
@@ -88,9 +93,14 @@ public sealed class CreateArticleDraftHandler
         {
             return Result<CreateArticleDraftResult>.Failure(ArticlesErrors.DuplicateSlug(draft.Slug));
         }
+        catch (DbUpdateException exception)
+        {
+            _logger.LogError(exception, "Creating article draft {ArticleSlug} failed.", draft.Slug.Value);
+            return Result<CreateArticleDraftResult>.Failure(ArticlesErrors.PersistenceFailure(
+                "Article draft could not be created. Verify PostgreSQL connectivity and retry."));
+        }
 
-        CreateArticleDraftResult result = new(draft.Id, draft.Slug);
-        return Result<CreateArticleDraftResult>.Success(result);
+        return Result<CreateArticleDraftResult>.Success(CreateArticleDraftResult.FromDraft(draft));
     }
 
     private static bool IsUniqueViolation(DbUpdateException exception)

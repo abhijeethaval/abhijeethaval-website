@@ -1,4 +1,5 @@
 import React from 'react';
+import { AdminArticlesPage } from './features/admin/AdminArticlesPage';
 import { ArchitecturePage } from './features/architecture/ArchitecturePage';
 import { ArticleDetailPage } from './features/articles/ArticleDetailPage';
 import { ArticlesPage } from './features/articles/ArticlesPage';
@@ -7,6 +8,7 @@ import { SiteHeader } from './shared/navigation/SiteHeader';
 
 const HOME_PATH = '/';
 const ARCHITECTURE_PATH = '/architecture';
+const ADMIN_ARTICLES_PATH = '/admin/articles';
 const ARTICLES_PATH = '/articles';
 const ARTICLE_PATH_PREFIX = `${ARTICLES_PATH}/`;
 
@@ -23,6 +25,10 @@ function App(): React.ReactElement {
 
   if (routePath === ARTICLES_PATH) {
     return <ArticlesPage />;
+  }
+
+  if (routePath === ADMIN_ARTICLES_PATH) {
+    return <AdminArticlesPage />;
   }
 
   if (routePath.startsWith(ARTICLE_PATH_PREFIX)) {

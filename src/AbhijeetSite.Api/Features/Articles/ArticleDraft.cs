@@ -17,6 +17,13 @@ public sealed class ArticleDraft
     /// </summary>
     public const int SummaryMaximumLength = 500;
 
+    /// <summary>
+    /// Maximum MDX source length.
+    /// </summary>
+    public const int MdxSourceMaximumLength = 100_000;
+
+    private const int InitialVersion = 1;
+
     private ArticleDraft()
     {
         Title = string.Empty;
@@ -40,6 +47,7 @@ public sealed class ArticleDraft
         Status = ArticleDraftStatus.Draft;
         CreatedAt = createdAt;
         UpdatedAt = createdAt;
+        Version = InitialVersion;
     }
 
     /// <summary>
@@ -83,6 +91,11 @@ public sealed class ArticleDraft
     public DateTimeOffset UpdatedAt { get; private set; }
 
     /// <summary>
+    /// Gets the optimistic concurrency version.
+    /// </summary>
+    public int Version { get; private set; }
+
+    /// <summary>
     /// Creates a new draft in the initial draft state.
     /// </summary>
     public static Result<ArticleDraft> Create(
@@ -99,6 +112,94 @@ public sealed class ArticleDraft
             : Result<ArticleDraft>.Failure(validationError);
     }
 
+    /// <summary>
+    /// Updates editable fields before first publish.
+    /// </summary>
+    public Result UpdateBeforeFirstPublish(
+        ArticleSlug slug,
+        string title,
+        string summary,
+        string mdxSource,
+        int expectedVersion,
+        DateTimeOffset updatedAt)
+    {
+        Error? updateError = ValidateUpdate(title, summary, mdxSource, expectedVersion);
+        if (updateError is not null)
+        {
+            return Result.Failure(updateError);
+        }
+
+        Slug = slug;
+        ApplyContentUpdate(title, summary, mdxSource, updatedAt);
+        return Result.Success();
+    }
+
+    /// <summary>
+    /// Updates editable fields after first publish while preserving the public slug.
+    /// </summary>
+    public Result UpdateAfterFirstPublish(
+        string title,
+        string summary,
+        string mdxSource,
+        int expectedVersion,
+        DateTimeOffset updatedAt)
+    {
+        Error? updateError = ValidateUpdate(title, summary, mdxSource, expectedVersion);
+        if (updateError is not null)
+        {
+            return Result.Failure(updateError);
+        }
+
+        ApplyContentUpdate(title, summary, mdxSource, updatedAt);
+        return Result.Success();
+    }
+
+    /// <summary>
+    /// Marks the draft as ready after a successful publish transition.
+    /// </summary>
+    public Result MarkReadyToPublish(int expectedVersion, DateTimeOffset updatedAt)
+    {
+        Error? versionError = ValidateVersion(expectedVersion);
+        if (versionError is not null)
+        {
+            return Result.Failure(versionError);
+        }
+
+        Status = ArticleDraftStatus.ReadyToPublish;
+        UpdatedAt = updatedAt;
+        Version++;
+        return Result.Success();
+    }
+
+    private void ApplyContentUpdate(
+        string title,
+        string summary,
+        string mdxSource,
+        DateTimeOffset updatedAt)
+    {
+        Title = title.Trim();
+        Summary = summary.Trim();
+        MdxSource = mdxSource;
+        Status = ArticleDraftStatus.Draft;
+        UpdatedAt = updatedAt;
+        Version++;
+    }
+
+    private Error? ValidateUpdate(
+        string title,
+        string summary,
+        string mdxSource,
+        int expectedVersion)
+    {
+        Error? versionError = ValidateVersion(expectedVersion);
+        return versionError ?? Validate(title, summary, mdxSource);
+    }
+
+    private Error? ValidateVersion(int expectedVersion)
+    {
+        return expectedVersion == Version ? null : ArticlesErrors.DraftVersionConflict();
+    }
+
     private static Error? Validate(string title, string summary, string mdxSource)
     {
         if (string.IsNullOrWhiteSpace(title))
@@ -106,11 +207,26 @@ public sealed class ArticleDraft
             return ArticlesErrors.TitleRequired();
         }
 
+        if (title.Length > TitleMaximumLength)
+        {
+            return ArticlesErrors.TitleTooLong();
+        }
+
         if (string.IsNullOrWhiteSpace(summary))
         {
             return ArticlesErrors.SummaryRequired();
         }
 
-        return string.IsNullOrWhiteSpace(mdxSource) ? ArticlesErrors.MdxSourceRequired() : null;
+        if (summary.Length > SummaryMaximumLength)
+        {
+            return ArticlesErrors.SummaryTooLong();
+        }
+
+        if (string.IsNullOrWhiteSpace(mdxSource))
+        {
+            return ArticlesErrors.MdxSourceRequired();
+        }
+
+        return mdxSource.Length > MdxSourceMaximumLength ? ArticlesErrors.MdxSourceTooLong() : null;
     }
 }

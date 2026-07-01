@@ -229,6 +229,14 @@ Publishing is a state transition from an admin-owned draft to a public read mode
 Draft edits after publishing do not change public content until a later publish
 transition succeeds.
 
+The first admin publishing implementation uses a constrained Markdown subset stored in
+`ArticleDraft.MdxSource`. It rejects imports, exports, MDX expressions, JSX, and raw HTML
+at publish time, then writes escaped render-ready HTML to `PublishedArticle.RenderedHtml`.
+Draft edits use `ArticleDraft.Version` for optimistic concurrency. A draft slug remains
+editable until first publish and is locked after that to preserve public URL stability.
+Republishing updates the current `PublishedArticle` row and increments `Revision`; it does
+not introduce historical revision rows yet.
+
 ## Security Invariants
 
 - OAuth client secrets are API configuration only.

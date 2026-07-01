@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
@@ -6,6 +6,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <!-- Container Publishing Settings -->
     <ContainerRepository>abhijeetsite-api</ContainerRepository>
+    <UserSecretsId>1b8e4031-ff79-48aa-b5bf-659a8f99d03e</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>

@@ -554,11 +554,13 @@ button {
 
 .architecture-hero,
 .articles-hero,
-.article-header {
+.article-header,
+.admin-header {
   padding-top: 48px;
 }
 
-.articles-hero {
+.articles-hero,
+.admin-header {
   background: var(--background);
 }
 
@@ -805,6 +807,194 @@ button {
   margin-top: 12px;
 }
 
+.admin-header h1 {
+  max-width: 760px;
+  margin: 0;
+  color: var(--text-primary);
+  font-family: var(--font-display);
+  font-size: clamp(30px, 3.8vw, 44px);
+  letter-spacing: 0;
+  line-height: 1.16;
+}
+
+.admin-header p:last-child {
+  margin: 14px 0 0;
+  color: var(--text-secondary);
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.admin-workspace {
+  background: var(--surface-subtle);
+}
+
+.admin-shell {
+  display: grid;
+  width: 100%;
+  max-width: 1240px;
+  margin: 0 auto;
+  grid-template-columns: minmax(240px, 0.34fr) minmax(0, 0.66fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.admin-draft-list,
+.admin-editor {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.admin-draft-list {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+}
+
+.admin-draft-row {
+  display: grid;
+  width: 100%;
+  gap: 6px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-primary);
+  cursor: pointer;
+  padding: 12px;
+  text-align: left;
+}
+
+.admin-draft-row:hover,
+.admin-draft-row[aria-current='true'] {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.admin-draft-row span {
+  overflow-wrap: anywhere;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+.admin-draft-row small,
+.admin-toolbar span {
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.admin-empty {
+  margin: 0;
+  color: var(--text-secondary);
+  padding: 16px;
+}
+
+.admin-editor {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+  padding: 18px;
+}
+
+.admin-editor label {
+  display: grid;
+  gap: 8px;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.admin-editor input,
+.admin-editor textarea {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface-raised);
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 15px;
+  line-height: 1.5;
+  padding: 10px 12px;
+}
+
+.admin-editor input:disabled {
+  background: var(--surface-muted);
+  color: var(--text-muted);
+}
+
+.admin-source {
+  font-family: Consolas, 'Cascadia Code', monospace;
+  resize: vertical;
+}
+
+.admin-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 14px;
+}
+
+.admin-toolbar div {
+  display: grid;
+  gap: 3px;
+  margin-right: auto;
+}
+
+.admin-toolbar strong {
+  color: var(--text-primary);
+  font-size: 15px;
+}
+
+.admin-toolbar button {
+  min-height: 36px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface-subtle);
+  color: var(--text-primary);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 800;
+  padding: 0 14px;
+}
+
+.admin-toolbar button:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent-strong);
+}
+
+.admin-toolbar button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.admin-message,
+.admin-error {
+  margin: 0;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 700;
+  padding: 10px 12px;
+}
+
+.admin-message {
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+}
+
+.admin-error {
+  background: #fff1f2;
+  color: #be123c;
+}
+
+:root[data-theme='dark'] .admin-error {
+  background: #4c1020;
+  color: #fecdd3;
+}
+
 @media (max-width: 860px) {
   .site-header {
     padding: 0 16px;
@@ -828,7 +1018,8 @@ button {
   .home-hero,
   .architecture-hero,
   .articles-hero,
-  .article-header {
+  .article-header,
+  .admin-header {
     padding-top: 40px;
   }
 
@@ -836,7 +1027,8 @@ button {
   .two-column,
   .architecture-hero-grid,
   .architecture-two-column,
-  .company-block {
+  .company-block,
+  .admin-shell {
     grid-template-columns: 1fr;
     gap: 26px;
   }
@@ -911,7 +1103,8 @@ button {
   .hero-copy h1,
   .architecture-hero-copy h1,
   .articles-heading h1,
-  .article-header h1 {
+  .article-header h1,
+  .admin-header h1 {
     font-size: 34px;
     overflow-wrap: anywhere;
   }

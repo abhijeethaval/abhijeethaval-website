@@ -1,4 +1,5 @@
 using AbhijeetSite.Api.Features.Articles;
+using AbhijeetSite.Api.Features.Articles.Admin;
 using AbhijeetSite.Api.Features.Home;
 using AbhijeetSite.Api.Features.Identity;
 using AbhijeetSite.Api.Features.Profile;
@@ -51,8 +52,8 @@ if (app.Environment.IsDevelopment())
     app.MapScalarApiReference();
 }
 
-// Skip HTTPS redirection when running in a container (Azure Container Apps handles SSL termination at Ingress)
-if (Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER") != "true")
+// Skip HTTPS redirection in local development and containers. Vite and ACA own the browser-facing edge.
+if (!app.Environment.IsDevelopment() && Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER") != "true")
 {
     app.UseHttpsRedirection();
 }
@@ -64,6 +65,7 @@ app.UseAuthorization();
 app.MapHomeEndpoints();
 app.MapProfileEndpoints();
 app.MapArticleEndpoints();
+app.MapAdminArticleEndpoints();
 app.MapIdentityEndpoints();
 
 app.Run();
