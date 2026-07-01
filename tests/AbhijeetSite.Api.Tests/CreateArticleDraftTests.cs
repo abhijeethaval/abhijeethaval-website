@@ -4,6 +4,7 @@ using AbhijeetSite.Api.Infrastructure.Persistence;
 using AbhijeetSite.Api.SharedKernel.Result;
 using AbhijeetSite.Api.Tests.Support;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace AbhijeetSite.Api.Tests;
 
@@ -83,7 +84,10 @@ public sealed class CreateArticleDraftTests : IClassFixture<PostgreSqlDatabaseFi
     private static CreateArticleDraftHandler CreateHandler(AppDbContext dbContext)
     {
         ManualApplicationClock clock = new(CreatedAt);
-        return new CreateArticleDraftHandler(dbContext, clock);
+        return new CreateArticleDraftHandler(
+            dbContext,
+            clock,
+            NullLogger<CreateArticleDraftHandler>.Instance);
     }
 
     private static CreateArticleDraftCommand CreateValidCommand(string slug, string mdxSource = MdxSource)

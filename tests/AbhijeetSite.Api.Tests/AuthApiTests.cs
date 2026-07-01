@@ -1,4 +1,5 @@
 using System.Net.Http.Json;
+using System.Net;
 using System.Security.Claims;
 using AbhijeetSite.Api.Features.Identity;
 using Microsoft.AspNetCore.Authorization;
@@ -35,6 +36,19 @@ public sealed class AuthApiTests : IClassFixture<WebApplicationFactory<Program>>
     }
 
     [Fact]
+    public async Task GetCurrentUser_DevelopmentRequest_DoesNotRedirectToHttps()
+    {
+        HttpClient client = _factory.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            AllowAutoRedirect = false
+        });
+
+        HttpResponseMessage response = await client.GetAsync("/api/auth/me");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
+
+    [Fact]
     public async Task AuthorizeAsync_AdminClaim_SucceedsForAdminOnlyPolicy()
     {
         using IServiceScope scope = _factory.Services.CreateScope();
@@ -64,6 +78,19 @@ public sealed class AuthApiTests : IClassFixture<WebApplicationFactory<Program>>
             AuthPolicies.AdminOnly);
 
         Assert.False(result.Succeeded);
+    }
+
+    [Fact]
+    public async Task GetAdminArticleDrafts_AnonymousRequest_ReturnsUnauthorized()
+    {
+        HttpClient client = _factory.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            AllowAutoRedirect = false
+        });
+
+        HttpResponseMessage response = await client.GetAsync("/api/admin/articles/drafts");
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 
     private static ClaimsPrincipal CreateAdminPrincipal()

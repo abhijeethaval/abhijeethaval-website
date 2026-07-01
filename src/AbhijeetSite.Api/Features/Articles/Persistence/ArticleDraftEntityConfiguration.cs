@@ -30,6 +30,7 @@ public sealed class ArticleDraftEntityConfiguration : IEntityTypeConfiguration<A
         builder.Property(draft => draft.Status).HasConversion<string>().HasMaxLength(StatusMaximumLength);
         builder.Property(draft => draft.CreatedAt).HasColumnType(TimestampWithTimeZone).IsRequired();
         builder.Property(draft => draft.UpdatedAt).HasColumnType(TimestampWithTimeZone).IsRequired();
+        builder.Property(draft => draft.Version).IsRequired().IsConcurrencyToken();
         builder.HasIndex(draft => draft.Slug).IsUnique();
     }
 }
