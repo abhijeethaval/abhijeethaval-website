@@ -14,7 +14,7 @@ export const ArticleStatusScreen: React.FC<ArticleStatusScreenProps> = ({
 }) => {
   return (
     <>
-      <SiteHeader activeSection="articles" />
+      <SiteHeader activeSection="ideas" />
       <main className="status-screen">
         <div className="error-panel">
           <h1>{title}</h1>

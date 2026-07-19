@@ -1069,11 +1069,6 @@ button {
     justify-content: flex-start;
   }
 
-  .site-header nav a:nth-child(2),
-  .site-header nav a:last-child {
-    display: none;
-  }
-
   .header-actions {
     margin-left: auto;
   }

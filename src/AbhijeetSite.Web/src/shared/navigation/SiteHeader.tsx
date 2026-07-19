@@ -2,7 +2,7 @@ import React from 'react';
 import { AuthStatus } from '../../features/auth/AuthStatus';
 import { useTheme } from '../theme/ThemeContext';
 
-type ActiveSection = 'architecture' | 'articles' | 'none' | 'profile';
+type ActiveSection = 'architecture' | 'ideas' | 'none' | 'profile';
 
 interface SiteHeaderProps {
   activeSection: ActiveSection;
@@ -54,13 +54,11 @@ const getNavigationLinks = (activeSection: ActiveSection): ReadonlyArray<Navigat
 
   return [
     { href: `${homePrefix}#profile`, label: 'Profile', isActive: activeSection === 'profile' },
-    { href: `${homePrefix}#experience`, label: 'Experience', isActive: false },
     {
       href: '/architecture',
       label: 'Architecture',
       isActive: activeSection === 'architecture',
     },
-    { href: '/articles', label: 'Articles', isActive: activeSection === 'articles' },
-    { href: `${homePrefix}#education`, label: 'Education', isActive: false },
+    { href: '/ideas', label: 'Ideas', isActive: activeSection === 'ideas' },
   ];
 };

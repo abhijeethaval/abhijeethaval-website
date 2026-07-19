@@ -16,11 +16,22 @@ export const ArticleDetailPage: React.FC<ArticleDetailPageProps> = ({ slug }) =>
   }, [slug]);
 
   if (state.isLoading) {
-    return <ArticleStatusScreen title="Loading article" message="Reading the published revision." />;
+    return (
+      <ArticleStatusScreen
+        title="Loading article"
+        message="Reading the published revision."
+      />
+    );
   }
 
   if (state.error !== null || state.article === null) {
-    return <ArticleStatusScreen title="Article unavailable" message={state.error ?? 'Article was not returned.'} onRetry={() => void loadArticle(slug, setState)} />;
+    return (
+      <ArticleStatusScreen
+        title="Article unavailable"
+        message={state.error ?? 'Article was not returned.'}
+        onRetry={() => void loadArticle(slug, setState)}
+      />
+    );
   }
 
   return <ArticleContent article={state.article} />;
@@ -58,11 +69,11 @@ interface ArticleContentProps {
 const ArticleContent: React.FC<ArticleContentProps> = ({ article }) => {
   return (
     <>
-      <SiteHeader activeSection="articles" />
+      <SiteHeader activeSection="ideas" />
       <main className="article-page">
         <header className="article-header section-band">
           <div className="article-shell">
-            <a className="article-back-link" href="/articles">Back to articles</a>
+            <a className="article-back-link" href="/ideas">Back to ideas</a>
             <p className="eyebrow">Published {formatArticleDate(article.publishedAt)}</p>
             <h1>{article.title}</h1>
             <p className="article-summary">{article.summary}</p>
