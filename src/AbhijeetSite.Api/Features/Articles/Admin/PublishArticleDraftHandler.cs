@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using AbhijeetSite.Api.Features.Articles.Rendering;
 using AbhijeetSite.Api.Infrastructure.Persistence;
 using AbhijeetSite.Api.SharedKernel.Result;
@@ -36,6 +37,17 @@ public sealed class PublishArticleDraftHandler
     /// Publishes a draft if the expected version is current.
     /// </summary>
     public async Task<Result<PublishedArticleResponse>> HandleAsync(
+        PublishArticleDraftCommand command,
+        CancellationToken cancellationToken)
+    {
+        using Activity? activity = ArticlesTelemetry.StartForDraft(
+            ArticlesTelemetry.PublishDraftActivityName,
+            command.Id);
+        Result<PublishedArticleResponse> result = await ExecuteAsync(command, cancellationToken);
+        return ArticlesTelemetry.Complete(activity, result);
+    }
+
+    private async Task<Result<PublishedArticleResponse>> ExecuteAsync(
         PublishArticleDraftCommand command,
         CancellationToken cancellationToken)
     {
@@ -111,9 +123,9 @@ public sealed class PublishArticleDraftHandler
             await _dbContext.SaveChangesAsync(cancellationToken);
             return Result<PublishedArticleResponse>.Success(ToResponse(article));
         }
-        catch (DbUpdateConcurrencyException exception)
+        catch (DbUpdateConcurrencyException)
         {
-            _logger.LogWarning(exception, "Article draft publish hit a version conflict.");
+            _logger.PublishDraftVersionConflict(article.DraftId.Value);
             return Result<PublishedArticleResponse>.Failure(ArticlesErrors.DraftVersionConflict());
         }
         catch (DbUpdateException exception) when (IsUniqueViolation(exception))
@@ -122,7 +134,8 @@ public sealed class PublishArticleDraftHandler
         }
         catch (DbUpdateException exception)
         {
-            _logger.LogError(exception, "Publishing article draft {ArticleDraftId} failed.", article.DraftId.Value);
+            _logger.PublishDraftPersistenceFailed(article.DraftId.Value, exception.GetType().Name);
+            ArticlesTelemetry.RecordException(exception);
             return Result<PublishedArticleResponse>.Failure(ArticlesErrors.PersistenceFailure(
                 "Article draft could not be published. Verify PostgreSQL connectivity and retry."));
         }

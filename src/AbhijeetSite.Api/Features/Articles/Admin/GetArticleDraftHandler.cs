@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using AbhijeetSite.Api.Infrastructure.Persistence;
 using AbhijeetSite.Api.SharedKernel.Result;
 using Microsoft.EntityFrameworkCore;
@@ -28,6 +29,17 @@ public sealed class GetArticleDraftHandler
         ArticleDraftId id,
         CancellationToken cancellationToken)
     {
+        using Activity? activity = ArticlesTelemetry.StartForDraft(
+            ArticlesTelemetry.GetDraftActivityName,
+            id);
+        Result<ArticleDraftResponse?> result = await ExecuteAsync(id, cancellationToken);
+        return ArticlesTelemetry.Complete(activity, result);
+    }
+
+    private async Task<Result<ArticleDraftResponse?>> ExecuteAsync(
+        ArticleDraftId id,
+        CancellationToken cancellationToken)
+    {
         try
         {
             ArticleDraft? draft = await _dbContext.ArticleDrafts
@@ -42,7 +54,8 @@ public sealed class GetArticleDraftHandler
         }
         catch (Exception exception) when (exception is not OperationCanceledException)
         {
-            _logger.LogError(exception, "Loading article draft {ArticleDraftId} failed.", id.Value);
+            _logger.GetDraftFailed(id.Value, exception.GetType().Name);
+            ArticlesTelemetry.RecordException(exception);
             return Result<ArticleDraftResponse?>.Failure(ArticlesErrors.ReadFailure());
         }
     }

@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using AbhijeetSite.Api.Infrastructure.Persistence;
 using AbhijeetSite.Api.SharedKernel.Result;
 using AbhijeetSite.Api.SharedKernel.Time;
@@ -14,6 +15,7 @@ public sealed class ExternalLoginUpsertHandler
     private readonly AppDbContext _dbContext;
     private readonly IApplicationClock _clock;
     private readonly IOptions<IdentityAuthenticationOptions> _options;
+    private readonly ILogger<ExternalLoginUpsertHandler> _logger;
 
     /// <summary>
     /// Creates the handler.
@@ -21,17 +23,34 @@ public sealed class ExternalLoginUpsertHandler
     public ExternalLoginUpsertHandler(
         AppDbContext dbContext,
         IApplicationClock clock,
-        IOptions<IdentityAuthenticationOptions> options)
+        IOptions<IdentityAuthenticationOptions> options,
+        ILogger<ExternalLoginUpsertHandler> logger)
     {
         _dbContext = dbContext;
         _clock = clock;
         _options = options;
+        _logger = logger;
     }
 
     /// <summary>
     /// Upserts local user and external login records.
     /// </summary>
     public async Task<Result<SignInUserResult>> HandleAsync(
+        ExternalLoginClaims claims,
+        CancellationToken cancellationToken)
+    {
+        using Activity? activity = IdentityTelemetry.Start(
+            IdentityTelemetry.ExternalLoginUpsertActivityName);
+        Result<SignInUserResult> result = await ExecuteAsync(claims, cancellationToken);
+        if (result.IsSuccess)
+        {
+            IdentityTelemetry.SetUserId(activity, result.Value.UserId);
+        }
+
+        return IdentityTelemetry.Complete(activity, result);
+    }
+
+    private async Task<Result<SignInUserResult>> ExecuteAsync(
         ExternalLoginClaims claims,
         CancellationToken cancellationToken)
     {
@@ -78,6 +97,7 @@ public sealed class ExternalLoginUpsertHandler
 
         if (user is null)
         {
+            _logger.ExternalLoginMissingLocalUser(login.UserId.Value);
             return Result<SignInUserResult>.Failure(IdentityErrors.MissingLocalUser(login.UserId));
         }
 
@@ -141,8 +161,10 @@ public sealed class ExternalLoginUpsertHandler
         {
             await _dbContext.SaveChangesAsync(cancellationToken);
         }
-        catch (DbUpdateException)
+        catch (DbUpdateException exception)
         {
+            _logger.ExternalLoginPersistenceFailed(user.Id.Value, exception.GetType().Name);
+            IdentityTelemetry.RecordException(exception);
             return Result<SignInUserResult>.Failure(IdentityErrors.PersistenceFailure());
         }
 

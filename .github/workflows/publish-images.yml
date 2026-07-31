@@ -1,4 +1,4 @@
-name: Publish Container Images to ACR
+name: Publish Container Images to GHCR
 
 on:
   push:
@@ -7,51 +7,48 @@ on:
   workflow_dispatch:
 
 permissions:
-  id-token: write
   contents: read
+  packages: write
+
+env:
+  REGISTRY: ghcr.io
+  API_IMAGE_NAME: ${{ github.repository }}-api
+  WEB_IMAGE_NAME: ${{ github.repository }}-web
 
 jobs:
   publish:
     runs-on: ubuntu-latest
-    env:
-      API_IMAGE: abhijeetsite-api
-      WEB_IMAGE: ${{ vars.WEB_APP || 'abhijeetsite-web' }}
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
 
       - name: Get short SHA
-        id: slug
         run: echo "SHA_SHORT=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
 
-      - name: Azure Login (OIDC)
-        uses: azure/login@v2
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
         with:
-          client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Verify Azure Container Registry
-        run: |
-          az acr show \
-            --name ${{ vars.ACR_NAME }} \
-            --query "{loginServer:loginServer, publicNetworkAccess:publicNetworkAccess, provisioningState:provisioningState}" \
-            --output table
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
-      - name: Build and Push API Container Image (ACR Build)
-        run: |
-          az acr build \
-            --registry ${{ vars.ACR_NAME }} \
-            --resource-group ${{ vars.RESOURCE_GROUP }} \
-            --image "$API_IMAGE:$SHA_SHORT" \
-            --file src/AbhijeetSite.Api/Dockerfile \
-            .
+      - name: Build and Push API Container Image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: src/AbhijeetSite.Api/Dockerfile
+          push: true
+          tags: ${{ env.REGISTRY }}/${{ env.API_IMAGE_NAME }}:${{ env.SHA_SHORT }}
+          labels: org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
 
-      - name: Build and Push Web Container Image (ACR Build)
-        run: |
-          az acr build \
-            --registry ${{ vars.ACR_NAME }} \
-            --resource-group ${{ vars.RESOURCE_GROUP }} \
-            --image "$WEB_IMAGE:$SHA_SHORT" \
-            --file src/AbhijeetSite.Web/Dockerfile \
-            src/AbhijeetSite.Web
+      - name: Build and Push Web Container Image
+        uses: docker/build-push-action@v6
+        with:
+          context: src/AbhijeetSite.Web
+          file: src/AbhijeetSite.Web/Dockerfile
+          push: true
+          tags: ${{ env.REGISTRY }}/${{ env.WEB_IMAGE_NAME }}:${{ env.SHA_SHORT }}
+          labels: org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}

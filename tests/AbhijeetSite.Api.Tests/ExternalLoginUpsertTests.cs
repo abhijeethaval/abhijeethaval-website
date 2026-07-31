@@ -4,6 +4,7 @@ using AbhijeetSite.Api.SharedKernel.Result;
 using AbhijeetSite.Api.Tests.Support;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace AbhijeetSite.Api.Tests;
 
@@ -81,7 +82,11 @@ public sealed class ExternalLoginUpsertTests : IClassFixture<PostgreSqlDatabaseF
         };
 
         ManualApplicationClock clock = new(SignedInAt);
-        return new ExternalLoginUpsertHandler(dbContext, clock, Options.Create(options));
+        return new ExternalLoginUpsertHandler(
+            dbContext,
+            clock,
+            Options.Create(options),
+            NullLogger<ExternalLoginUpsertHandler>.Instance);
     }
 
     private static ExternalLoginClaims CreateClaims(

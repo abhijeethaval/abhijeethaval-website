@@ -1,119 +1,210 @@
+using System.Reflection;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.ServiceDiscovery;
+using Npgsql;
 using OpenTelemetry;
+using OpenTelemetry.Context.Propagation;
+using OpenTelemetry.Exporter;
+using OpenTelemetry.Logs;
 using OpenTelemetry.Metrics;
+using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 
 namespace Microsoft.Extensions.Hosting;
 
-// Adds common .NET Aspire services: service discovery, resilience, health checks, and OpenTelemetry.
-// This project should be referenced by each service project in your solution.
-// To learn more about using this project, see https://aka.ms/dotnet/aspire/service-defaults
+/// <summary>
+/// Adds shared service discovery, resilience, health checks, and OpenTelemetry defaults.
+/// </summary>
 public static class Extensions
 {
-    public static TBuilder AddServiceDefaults<TBuilder>(this TBuilder builder) where TBuilder : IHostApplicationBuilder
+    private const string LoggingEndpointName = "CONTAINERAPP_OTEL_LOGGING_GRPC_ENDPOINT";
+    private const string MetricsEndpointName = "CONTAINERAPP_OTEL_METRIC_GRPC_ENDPOINT";
+    private const string OtlpEndpointName = "OTEL_EXPORTER_OTLP_ENDPOINT";
+    private const string OtlpProtocolName = "OTEL_EXPORTER_OTLP_PROTOCOL";
+    private const string TracingEndpointName = "CONTAINERAPP_OTEL_TRACING_GRPC_ENDPOINT";
+
+    /// <summary>
+    /// Adds the service defaults required by an application.
+    /// </summary>
+    public static TBuilder AddServiceDefaults<TBuilder>(
+        this TBuilder builder,
+        string serviceName,
+        params string[] activitySourceNames)
+        where TBuilder : IHostApplicationBuilder
     {
-        builder.ConfigureOpenTelemetry();
-
+        ArgumentException.ThrowIfNullOrWhiteSpace(serviceName);
+        builder.ConfigureOpenTelemetry(serviceName, activitySourceNames);
         builder.AddDefaultHealthChecks();
-
         builder.Services.AddServiceDiscovery();
-
         builder.Services.ConfigureHttpClientDefaults(http =>
         {
-            // Turn on resilience by default
             http.AddStandardResilienceHandler();
-
-            // Turn on service discovery by default
             http.AddServiceDiscovery();
         });
-
-        // Uncomment the following to restrict the allowed schemes for service discovery.
-        // builder.Services.Configure<ServiceDiscoveryOptions>(options =>
-        // {
-        //     options.AllowedSchemes = ["https"];
-        // });
-
         return builder;
     }
 
-    public static TBuilder ConfigureOpenTelemetry<TBuilder>(this TBuilder builder) where TBuilder : IHostApplicationBuilder
+    /// <summary>
+    /// Configures vendor-neutral telemetry collection and OTLP export.
+    /// </summary>
+    public static TBuilder ConfigureOpenTelemetry<TBuilder>(
+        this TBuilder builder,
+        string serviceName,
+        params string[] activitySourceNames)
+        where TBuilder : IHostApplicationBuilder
+    {
+        ArgumentNullException.ThrowIfNull(activitySourceNames);
+        Sdk.SetDefaultTextMapPropagator(new TraceContextPropagator());
+        ConfigureLogging(builder);
+        builder.Services.AddOpenTelemetry()
+            .ConfigureResource(resource => ConfigureResource(resource, serviceName))
+            .WithMetrics(metrics => ConfigureMetrics(builder, metrics))
+            .WithTracing(tracing => ConfigureTracing(builder, tracing, activitySourceNames));
+        return builder;
+    }
+
+    /// <summary>
+    /// Adds the default liveness health check.
+    /// </summary>
+    public static TBuilder AddDefaultHealthChecks<TBuilder>(this TBuilder builder)
+        where TBuilder : IHostApplicationBuilder
+    {
+        builder.Services.AddHealthChecks()
+            .AddCheck("self", () => HealthCheckResult.Healthy(), ["live"]);
+        return builder;
+    }
+
+    /// <summary>
+    /// Maps the default health endpoints.
+    /// </summary>
+    public static WebApplication MapDefaultEndpoints(this WebApplication app)
+    {
+        app.MapHealthChecks("/health");
+        app.MapHealthChecks("/alive", new HealthCheckOptions
+        {
+            Predicate = healthCheck => healthCheck.Tags.Contains("live")
+        });
+
+        return app;
+    }
+
+    private static void ConfigureLogging<TBuilder>(TBuilder builder)
+        where TBuilder : IHostApplicationBuilder
     {
         builder.Logging.AddOpenTelemetry(logging =>
         {
             logging.IncludeFormattedMessage = true;
             logging.IncludeScopes = true;
+            logging.ParseStateValues = true;
+            AddLoggingExporter(builder, logging);
         });
-
-        builder.Services.AddOpenTelemetry()
-            .WithMetrics(metrics =>
-            {
-                metrics.AddAspNetCoreInstrumentation()
-                    .AddHttpClientInstrumentation()
-                    .AddRuntimeInstrumentation();
-            })
-            .WithTracing(tracing =>
-            {
-                tracing.AddSource(builder.Environment.ApplicationName)
-                    .AddAspNetCoreInstrumentation()
-                    // Uncomment the following line to enable gRPC instrumentation (requires the OpenTelemetry.Instrumentation.GrpcNetClient package)
-                    //.AddGrpcClientInstrumentation()
-                    .AddHttpClientInstrumentation();
-            });
-
-        builder.AddOpenTelemetryExporters();
-
-        return builder;
     }
 
-    private static TBuilder AddOpenTelemetryExporters<TBuilder>(this TBuilder builder) where TBuilder : IHostApplicationBuilder
+    private static void ConfigureResource(ResourceBuilder resource, string serviceName)
     {
-        var useOtlpExporter = !string.IsNullOrWhiteSpace(builder.Configuration["OTEL_EXPORTER_OTLP_ENDPOINT"]);
+        string? serviceVersion = Assembly.GetEntryAssembly()?.GetName().Version?.ToString();
+        resource.AddService(serviceName, serviceVersion: serviceVersion);
+    }
 
-        if (useOtlpExporter)
+    private static void ConfigureMetrics<TBuilder>(TBuilder builder, MeterProviderBuilder metrics)
+        where TBuilder : IHostApplicationBuilder
+    {
+        metrics.AddAspNetCoreInstrumentation()
+            .AddHttpClientInstrumentation()
+            .AddRuntimeInstrumentation();
+
+        if (!HasManagedAgent(builder) && HasEndpoint(builder, OtlpEndpointName))
         {
-            builder.Services.AddOpenTelemetry().UseOtlpExporter();
+            metrics.AddOtlpExporter();
         }
-
-        // Uncomment the following lines to enable the Azure Monitor exporter (requires the Azure.Monitor.OpenTelemetry.AspNetCore package)
-        //if (!string.IsNullOrEmpty(builder.Configuration["APPLICATIONINSIGHTS_CONNECTION_STRING"]))
-        //{
-        //    builder.Services.AddOpenTelemetry()
-        //       .UseAzureMonitor();
-        //}
-
-        return builder;
     }
 
-    public static TBuilder AddDefaultHealthChecks<TBuilder>(this TBuilder builder) where TBuilder : IHostApplicationBuilder
+    private static void ConfigureTracing<TBuilder>(
+        TBuilder builder,
+        TracerProviderBuilder tracing,
+        string[] activitySourceNames)
+        where TBuilder : IHostApplicationBuilder
     {
-        builder.Services.AddHealthChecks()
-            // Add a default liveness check to ensure app is responsive
-            .AddCheck("self", () => HealthCheckResult.Healthy(), ["live"]);
-
-        return builder;
+        tracing.SetSampler(new ParentBasedSampler(new AlwaysOnSampler()))
+            .AddSource(activitySourceNames)
+            .AddAspNetCoreInstrumentation()
+            .AddHttpClientInstrumentation()
+            .AddNpgsql();
+        AddTracingExporter(builder, tracing);
     }
 
-    public static WebApplication MapDefaultEndpoints(this WebApplication app)
+    private static void AddLoggingExporter<TBuilder>(
+        TBuilder builder,
+        OpenTelemetryLoggerOptions logging)
+        where TBuilder : IHostApplicationBuilder
     {
-        // Adding health checks endpoints to applications in non-development environments has security implications.
-        // See https://aka.ms/dotnet/aspire/healthchecks for details before enabling these endpoints in non-development environments.
-        if (app.Environment.IsDevelopment())
+        if (HasEndpoint(builder, OtlpEndpointName))
         {
-            // All health checks must pass for app to be considered ready to accept traffic after starting
-            app.MapHealthChecks("/health");
-
-            // Only health checks tagged with the "live" tag must pass for app to be considered alive
-            app.MapHealthChecks("/alive", new HealthCheckOptions
-            {
-                Predicate = r => r.Tags.Contains("live")
-            });
+            logging.AddOtlpExporter();
         }
+        else
+        {
+            Uri? endpoint = GetEndpoint(builder, LoggingEndpointName);
+            if (endpoint is not null)
+            {
+                logging.AddOtlpExporter(options => options.Endpoint = endpoint);
+            }
+        }
+    }
 
-        return app;
+    private static void AddTracingExporter<TBuilder>(
+        TBuilder builder,
+        TracerProviderBuilder tracing)
+        where TBuilder : IHostApplicationBuilder
+    {
+        Uri? endpoint = GetEndpoint(builder, OtlpEndpointName)
+            ?? GetEndpoint(builder, TracingEndpointName);
+        if (endpoint is not null)
+        {
+            OtlpExporterOptions options = new()
+            {
+                Endpoint = endpoint,
+                Protocol = GetOtlpProtocol(builder)
+            };
+            OtlpTraceExporter exporter = new(options);
+            tracing.AddProcessor(new TelemetryBatchExportProcessor(exporter));
+        }
+    }
+
+    private static bool HasManagedAgent<TBuilder>(TBuilder builder)
+        where TBuilder : IHostApplicationBuilder
+    {
+        return HasEndpoint(builder, TracingEndpointName)
+            || HasEndpoint(builder, LoggingEndpointName)
+            || HasEndpoint(builder, MetricsEndpointName);
+    }
+
+    private static OtlpExportProtocol GetOtlpProtocol<TBuilder>(TBuilder builder)
+        where TBuilder : IHostApplicationBuilder
+    {
+        string? protocol = builder.Configuration[OtlpProtocolName]?.Trim();
+        return protocol?.ToLowerInvariant() switch
+        {
+            null or "" or "http/protobuf" => OtlpExportProtocol.HttpProtobuf,
+            "grpc" => OtlpExportProtocol.Grpc,
+            _ => throw new InvalidOperationException(
+                $"Unsupported {OtlpProtocolName} value '{protocol}'. Use 'grpc' or 'http/protobuf'.")
+        };
+    }
+
+    private static bool HasEndpoint<TBuilder>(TBuilder builder, string configurationName)
+        where TBuilder : IHostApplicationBuilder
+    {
+        return GetEndpoint(builder, configurationName) is not null;
+    }
+
+    private static Uri? GetEndpoint<TBuilder>(TBuilder builder, string configurationName)
+        where TBuilder : IHostApplicationBuilder
+    {
+        string? value = builder.Configuration[configurationName]?.Trim();
+        return Uri.TryCreate(value, UriKind.Absolute, out Uri? endpoint) ? endpoint : null;
     }
 }

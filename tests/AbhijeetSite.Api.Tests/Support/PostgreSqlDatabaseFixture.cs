@@ -17,6 +17,8 @@ public sealed class PostgreSqlDatabaseFixture : IAsyncLifetime
         .WithPassword(Password)
         .Build();
 
+    internal string ConnectionString => _container.GetConnectionString();
+
     public async Task InitializeAsync()
     {
         await _container.StartAsync();

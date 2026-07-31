@@ -12,6 +12,8 @@ namespace AbhijeetSite.Api.Infrastructure.Persistence;
 /// </summary>
 public static class PersistenceServiceCollectionExtensions
 {
+    private const string DatabaseCommandSpanName = "postgresql.command";
+
     /// <summary>
     /// Adds EF Core persistence services when a database connection string is configured.
     /// </summary>
@@ -25,7 +27,9 @@ public static class PersistenceServiceCollectionExtensions
         {
             if (!string.IsNullOrWhiteSpace(connectionString))
             {
-                options.UseNpgsql(connectionString);
+                options.UseNpgsql(connectionString, npgsql => npgsql.ConfigureDataSource(dataSource =>
+                    dataSource.ConfigureTracing(tracing =>
+                        tracing.ConfigureCommandSpanNameProvider(_ => DatabaseCommandSpanName))));
             }
         });
         services.AddSingleton<ConstrainedMarkdownRenderer>();
