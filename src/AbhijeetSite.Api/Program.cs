@@ -3,6 +3,7 @@ using AbhijeetSite.Api.Features.Articles.Admin;
 using AbhijeetSite.Api.Features.Home;
 using AbhijeetSite.Api.Features.Identity;
 using AbhijeetSite.Api.Features.Profile;
+using AbhijeetSite.Api.Infrastructure.Observability;
 using AbhijeetSite.Api.Infrastructure.Persistence;
 using AbhijeetSite.Api.SharedKernel.Time;
 using Microsoft.AspNetCore.HttpOverrides;
@@ -10,11 +11,18 @@ using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
+const string ApiServiceName = "abhijeetsite-api";
+
 // Add service defaults (OpenTelemetry, metrics, service discovery, etc.)
-builder.AddServiceDefaults();
+builder.AddServiceDefaults(
+    ApiServiceName,
+    ArticlesTelemetry.SourceName,
+    IdentityTelemetry.SourceName);
 
 // Add services to the container.
 builder.Services.AddCors();
+builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
+builder.Services.AddProblemDetails();
 builder.Services.AddOpenApi();
 builder.Services.AddSingleton<IApplicationClock, SystemApplicationClock>();
 builder.Services.AddPersistence(builder.Configuration);
@@ -24,6 +32,7 @@ var app = builder.Build();
 
 await app.InitializeDatabaseAsync();
 
+app.UseExceptionHandler();
 app.UseForwardedHeaders();
 app.UseIdentityPublicOrigin();
 
@@ -34,16 +43,6 @@ app.UseCors(policy => policy
 
 // Map default endpoints (health check, etc.)
 app.MapDefaultEndpoints();
-
-// Ensure health checks are available in production for Azure Container Apps probes
-if (!app.Environment.IsDevelopment())
-{
-    app.MapHealthChecks("/health");
-    app.MapHealthChecks("/alive", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
-    {
-        Predicate = r => r.Tags.Contains("live")
-    });
-}
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

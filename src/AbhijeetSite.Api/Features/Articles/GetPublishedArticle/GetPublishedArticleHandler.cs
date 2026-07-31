@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using AbhijeetSite.Api.Infrastructure.Persistence;
 using AbhijeetSite.Api.SharedKernel.Result;
 using Microsoft.EntityFrameworkCore;
@@ -30,6 +31,16 @@ public sealed class GetPublishedArticleHandler
         ArticleSlug slug,
         CancellationToken cancellationToken)
     {
+        using Activity? activity = ArticlesTelemetry.Start(
+            ArticlesTelemetry.GetPublishedArticleActivityName);
+        Result<PublishedArticleResponse?> result = await ExecuteAsync(slug, cancellationToken);
+        return ArticlesTelemetry.Complete(activity, result);
+    }
+
+    private async Task<Result<PublishedArticleResponse?>> ExecuteAsync(
+        ArticleSlug slug,
+        CancellationToken cancellationToken)
+    {
         try
         {
             PublishedArticleResponse? article = await _dbContext.PublishedArticles
@@ -47,9 +58,10 @@ public sealed class GetPublishedArticleHandler
 
             return Result<PublishedArticleResponse?>.Success(article);
         }
-        catch (Exception exception)
+        catch (Exception exception) when (exception is not OperationCanceledException)
         {
-            _logger.LogError(exception, "Loading published article {ArticleSlug} failed.", slug.Value);
+            _logger.GetPublishedArticleFailed(exception.GetType().Name);
+            ArticlesTelemetry.RecordException(exception);
             return Result<PublishedArticleResponse?>.Failure(ArticlesErrors.ReadFailure());
         }
     }

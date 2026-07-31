@@ -1,0 +1,3 @@
+window.__ABHIJEET_SITE_TELEMETRY__ = Object.freeze({
+  connectionString: "${APPLICATIONINSIGHTS_CONNECTION_STRING}"
+});

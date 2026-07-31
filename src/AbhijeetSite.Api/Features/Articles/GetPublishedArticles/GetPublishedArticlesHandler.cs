@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using AbhijeetSite.Api.Infrastructure.Persistence;
 using AbhijeetSite.Api.SharedKernel.Result;
 using Microsoft.EntityFrameworkCore;
@@ -29,6 +30,15 @@ public sealed class GetPublishedArticlesHandler
     public async Task<Result<IReadOnlyList<PublishedArticleSummaryResponse>>> HandleAsync(
         CancellationToken cancellationToken)
     {
+        using Activity? activity = ArticlesTelemetry.Start(
+            ArticlesTelemetry.GetPublishedArticlesActivityName);
+        Result<IReadOnlyList<PublishedArticleSummaryResponse>> result = await ExecuteAsync(cancellationToken);
+        return ArticlesTelemetry.Complete(activity, result);
+    }
+
+    private async Task<Result<IReadOnlyList<PublishedArticleSummaryResponse>>> ExecuteAsync(
+        CancellationToken cancellationToken)
+    {
         try
         {
             List<PublishedArticleSummaryResponse> articles = await _dbContext.PublishedArticles
@@ -45,9 +55,10 @@ public sealed class GetPublishedArticlesHandler
 
             return Result<IReadOnlyList<PublishedArticleSummaryResponse>>.Success(articles);
         }
-        catch (Exception exception)
+        catch (Exception exception) when (exception is not OperationCanceledException)
         {
-            _logger.LogError(exception, "Loading published article summaries failed.");
+            _logger.GetPublishedArticlesFailed(exception.GetType().Name);
+            ArticlesTelemetry.RecordException(exception);
             return Result<IReadOnlyList<PublishedArticleSummaryResponse>>.Failure(
                 ArticlesErrors.ReadFailure());
         }

@@ -19,7 +19,7 @@ The current production-facing capabilities are a curated professional profile, a
 | API surface | Profile endpoints, published article reads, and `/api/auth/*` session endpoints. |
 | Frontend data flow | React loads API data and auth state through relative `/api` calls. Vite proxies `/api` during local development; Nginx proxies `/api` in Azure. |
 | Backend data source | Curated in-process profile content in `ProfileContentProvider`; PostgreSQL persistence baseline for publishing modules. |
-| Observability | Aspire service defaults, OpenTelemetry wiring, health endpoints, and development OpenAPI/Scalar UI. |
+| Observability | End-to-end W3C tracing, native structured logging, OpenTelemetry API instrumentation, browser RUM, Aspire locally, and Application Insights through the ACA managed agent in production. |
 | Persistence/auth/articles | PostgreSQL persistence, public published-article reads, and API-owned Google auth baseline implemented; owner publishing and comments remain planned. |
 | Deployment | Containerized API and Web images deployed to Azure Container Apps. |
 
@@ -38,6 +38,7 @@ tests/
 deploy/
   build-and-push-images.ps1      Azure ACR cloud-build helper for API and Web images
 docs/
+  observability.md               Application Insights provisioning and telemetry validation runbook
   deploy-github-actions.md       Azure Container Apps and GitHub Actions setup guide
   implementation-plan/           Iterative roadmap for persistence, auth, articles, and comments
 .github/workflows/
@@ -54,7 +55,7 @@ docs/
 | .NET SDK | `10.0.x` |
 | .NET Aspire workload | Required for `AbhijeetSite.AppHost` |
 | Container runtime | Required for Aspire-managed PostgreSQL and Testcontainers-backed integration tests |
-| Node.js | Node 20+ recommended |
+| Node.js | Node 20.19+ or Node 22.13+ |
 | npm | Required for `src/AbhijeetSite.Web` |
 | Azure CLI | Required only for Azure deployment workflows from a local machine |
 
@@ -211,6 +212,17 @@ Runtime auth configuration:
 | `Auth__Google__ClientSecret` | Google OAuth client secret. Store as an ACA secret or Key Vault reference. |
 | `Auth__AdminEmails__0` | First verified Google email granted the local `AdminOnly` policy. |
 | `Auth__DataProtectionKeysPath` | Durable ASP.NET Core Data Protection key path. Required when production Google credentials are configured. |
+
+Runtime observability configuration:
+
+| Setting | Owner | Purpose |
+|---|---|---|
+| `APPLICATIONINSIGHTS_CONNECTION_STRING` | Web Container App | Enables anonymous, cookieless browser telemetry through the runtime-generated `/telemetry-config.js`. |
+| `CONTAINERAPP_OTEL_TRACING_GRPC_ENDPOINT` | ACA environment | Injected by the managed OpenTelemetry agent; the API exports traces to it. Do not set manually. |
+| `CONTAINERAPP_OTEL_LOGGING_GRPC_ENDPOINT` | ACA environment | Injected by the managed OpenTelemetry agent; the API exports structured logs to it. Do not set manually. |
+
+See `docs/observability.md` for the Application Insights, managed OpenTelemetry agent,
+retention, cost-control, alerting, and end-to-end validation procedure.
 
 ---
 

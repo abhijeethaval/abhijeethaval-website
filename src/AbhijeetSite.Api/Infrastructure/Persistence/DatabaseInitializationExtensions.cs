@@ -30,8 +30,9 @@ public static class DatabaseInitializationExtensions
         }
         catch (Exception exception)
         {
-            logger.LogCritical(exception, "Database migration failed for {DatabaseName}.",
-                PersistenceConnectionNames.ApplicationDatabase);
+            logger.DatabaseMigrationFailed(
+                PersistenceConnectionNames.ApplicationDatabase,
+                exception.GetType().Name);
             throw new InvalidOperationException(
                 "Application startup stopped because PostgreSQL migrations could not be applied.",
                 exception);

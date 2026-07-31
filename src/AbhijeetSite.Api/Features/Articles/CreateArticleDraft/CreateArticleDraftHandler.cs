@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using AbhijeetSite.Api.Infrastructure.Persistence;
 using AbhijeetSite.Api.SharedKernel.Result;
 using AbhijeetSite.Api.SharedKernel.Time;
@@ -32,6 +33,20 @@ public sealed class CreateArticleDraftHandler
     /// Creates an article draft.
     /// </summary>
     public async Task<Result<CreateArticleDraftResult>> HandleAsync(
+        CreateArticleDraftCommand command,
+        CancellationToken cancellationToken)
+    {
+        using Activity? activity = ArticlesTelemetry.Start(ArticlesTelemetry.CreateDraftActivityName);
+        Result<CreateArticleDraftResult> result = await ExecuteAsync(command, cancellationToken);
+        if (result.IsSuccess)
+        {
+            ArticlesTelemetry.SetDraftId(activity, result.Value.Id);
+        }
+
+        return ArticlesTelemetry.Complete(activity, result);
+    }
+
+    private async Task<Result<CreateArticleDraftResult>> ExecuteAsync(
         CreateArticleDraftCommand command,
         CancellationToken cancellationToken)
     {
@@ -95,7 +110,8 @@ public sealed class CreateArticleDraftHandler
         }
         catch (DbUpdateException exception)
         {
-            _logger.LogError(exception, "Creating article draft {ArticleSlug} failed.", draft.Slug.Value);
+            _logger.CreateDraftPersistenceFailed(draft.Id.Value, exception.GetType().Name);
+            ArticlesTelemetry.RecordException(exception);
             return Result<CreateArticleDraftResult>.Failure(ArticlesErrors.PersistenceFailure(
                 "Article draft could not be created. Verify PostgreSQL connectivity and retry."));
         }

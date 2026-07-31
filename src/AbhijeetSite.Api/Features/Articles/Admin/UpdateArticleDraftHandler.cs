@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using AbhijeetSite.Api.Infrastructure.Persistence;
 using AbhijeetSite.Api.SharedKernel.Result;
 using AbhijeetSite.Api.SharedKernel.Time;
@@ -32,6 +33,17 @@ public sealed class UpdateArticleDraftHandler
     /// Updates a draft if the expected version is current.
     /// </summary>
     public async Task<Result<ArticleDraftResponse>> HandleAsync(
+        UpdateArticleDraftCommand command,
+        CancellationToken cancellationToken)
+    {
+        using Activity? activity = ArticlesTelemetry.StartForDraft(
+            ArticlesTelemetry.UpdateDraftActivityName,
+            command.Id);
+        Result<ArticleDraftResponse> result = await ExecuteAsync(command, cancellationToken);
+        return ArticlesTelemetry.Complete(activity, result);
+    }
+
+    private async Task<Result<ArticleDraftResponse>> ExecuteAsync(
         UpdateArticleDraftCommand command,
         CancellationToken cancellationToken)
     {
@@ -114,9 +126,9 @@ public sealed class UpdateArticleDraftHandler
             await _dbContext.SaveChangesAsync(cancellationToken);
             return Result<ArticleDraftResponse>.Success(ToResponse(draft, isPublished));
         }
-        catch (DbUpdateConcurrencyException exception)
+        catch (DbUpdateConcurrencyException)
         {
-            _logger.LogWarning(exception, "Article draft {ArticleDraftId} version conflict.", draft.Id.Value);
+            _logger.UpdateDraftVersionConflict(draft.Id.Value);
             return Result<ArticleDraftResponse>.Failure(ArticlesErrors.DraftVersionConflict());
         }
         catch (DbUpdateException exception) when (IsUniqueViolation(exception))
@@ -125,7 +137,8 @@ public sealed class UpdateArticleDraftHandler
         }
         catch (DbUpdateException exception)
         {
-            _logger.LogError(exception, "Saving article draft {ArticleDraftId} failed.", draft.Id.Value);
+            _logger.UpdateDraftPersistenceFailed(draft.Id.Value, exception.GetType().Name);
+            ArticlesTelemetry.RecordException(exception);
             return Result<ArticleDraftResponse>.Failure(ArticlesErrors.PersistenceFailure(
                 "Article draft could not be saved. Verify PostgreSQL connectivity and retry."));
         }

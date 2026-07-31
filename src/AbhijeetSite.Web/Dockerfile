@@ -12,6 +12,7 @@ FROM nginx:alpine
 COPY --from=build /app/dist /usr/share/nginx/html
 # Copy nginx configuration template
 COPY nginx.conf.template /etc/nginx/nginx.conf.template
+COPY telemetry-config.js.template /etc/nginx/telemetry-config.js.template
 # Copy docker entrypoint script
 COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh
