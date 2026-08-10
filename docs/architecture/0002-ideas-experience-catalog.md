@@ -26,10 +26,13 @@ domain.
 | Compatibility routes | Continue resolving `/articles` and `/articles/{slug}`. |
 | Interactive experiences | Register reviewed React components in a typed frontend catalog. |
 | Written content | Continue reading published summaries and HTML from `/api/articles`. |
+| Index presentation | Render one catalog; show experience formats as item metadata. |
 | Duplicate slugs | The code-backed interactive experience takes public precedence. |
 
 The Ideas index is an editorial composition rather than a count-driven archive. It may
 feature one strong interactive thesis without presenting the catalog as incomplete.
+Interactive theses, essays, and build notes do not create separate index sections or
+navigation categories; their format labels help readers scan one coherent catalog.
 
 ## Boundaries
 

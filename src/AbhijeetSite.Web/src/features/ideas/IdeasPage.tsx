@@ -33,8 +33,7 @@ export const IdeasPage: React.FC = () => {
       <SiteHeader activeSection="ideas" />
       <main className="ideas-page">
         <IdeasHero />
-        <FeaturedIdea idea={FEATURED_INTERACTIVE_IDEA} />
-        <WrittenIdeasSection state={state} onRetry={() => void loadPublishedIdeas(setState)} />
+        <IdeasCatalog state={state} onRetry={() => void loadPublishedIdeas(setState)} />
       </main>
     </>
   );
@@ -55,21 +54,39 @@ const IdeasHero: React.FC = () => {
   );
 };
 
-const FeaturedIdea: React.FC<{ readonly idea: InteractiveIdea }> = ({ idea }) => {
+interface IdeasCatalogProps {
+  readonly onRetry: () => void;
+  readonly state: PublishedIdeasState;
+}
+
+const IdeasCatalog: React.FC<IdeasCatalogProps> = ({ onRetry, state }) => {
+  const articles: ReadonlyArray<PublishedArticleSummary> = state.articles.filter(
+    (article) => !isInteractiveIdeaSlug(article.slug),
+  );
+
   return (
-    <section className="featured-idea-section section-band">
+    <section className="ideas-catalog-section section-band">
       <div className="section-shell">
-        <article className="featured-idea-card">
-          <div className="featured-idea-copy">
-            <p>{idea.format} · Featured</p>
-            <h2>{idea.title}</h2>
-            <span>{idea.summary}</span>
-            <a href={`/ideas/${idea.slug}`}>Explore the thesis <b>→</b></a>
-          </div>
-          <FeaturedIdeaVisual />
-        </article>
+        <FeaturedIdea idea={FEATURED_INTERACTIVE_IDEA} />
+        <PublishedIdeasState state={state} articles={articles} onRetry={onRetry} />
       </div>
     </section>
+  );
+};
+
+const FeaturedIdea: React.FC<{ readonly idea: InteractiveIdea }> = ({ idea }) => {
+  return (
+    <article className="idea-card featured-idea-card">
+      <div className="featured-idea-copy">
+        <p>{idea.format} · Featured</p>
+        <h2>{idea.title}</h2>
+        <span>{idea.summary}</span>
+        <a className="idea-card-action" href={`/ideas/${idea.slug}`}>
+          Explore the thesis <b>→</b>
+        </a>
+      </div>
+      <FeaturedIdeaVisual />
+    </article>
   );
 };
 
@@ -80,32 +97,6 @@ const FeaturedIdeaVisual: React.FC = () => {
       <div><strong>Deterministic domain</strong><small>Source of authority</small></div>
       <p>Change the frame</p>
     </div>
-  );
-};
-
-interface WrittenIdeasSectionProps {
-  readonly onRetry: () => void;
-  readonly state: PublishedIdeasState;
-}
-
-const WrittenIdeasSection: React.FC<WrittenIdeasSectionProps> = ({ onRetry, state }) => {
-  const articles: ReadonlyArray<PublishedArticleSummary> = state.articles.filter(
-    (article) => !isInteractiveIdeaSlug(article.slug),
-  );
-
-  return (
-    <section className="written-ideas-section section-band">
-      <div className="section-shell">
-        <div className="written-ideas-heading">
-          <div>
-            <p className="eyebrow">Build notes</p>
-            <span>Concrete decisions from building the site itself.</span>
-          </div>
-          <h2>From an architecture idea to working software.</h2>
-        </div>
-        <PublishedIdeasState state={state} articles={articles} onRetry={onRetry} />
-      </div>
-    </section>
   );
 };
 
@@ -161,13 +152,19 @@ const PublishedIdeaCard: React.FC<{
   readonly article: PublishedArticleSummary;
 }> = ({ article }) => {
   return (
-    <article className="published-idea-card">
+    <article className="idea-card published-idea-card">
       <div>
         <p>Build note · {formatIdeaDate(article.publishedAt)}</p>
         <h3><a href={`/ideas/${article.slug}`}>{article.title}</a></h3>
         <span>{article.summary}</span>
       </div>
-      <a href={`/ideas/${article.slug}`} aria-label={`Read ${article.title}`}>Read <b>→</b></a>
+      <a
+        className="idea-card-action"
+        href={`/ideas/${article.slug}`}
+        aria-label={`Read ${article.title}`}
+      >
+        Read <b>→</b>
+      </a>
     </article>
   );
 };
