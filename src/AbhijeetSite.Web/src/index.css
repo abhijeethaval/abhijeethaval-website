@@ -69,6 +69,20 @@ a {
   text-decoration: none;
 }
 
+.site-back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--accent-strong);
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.4;
+}
+
+.site-back-link:hover {
+  color: var(--accent);
+}
+
 button {
   font: inherit;
 }
@@ -595,8 +609,7 @@ button {
   padding: 22px;
 }
 
-.article-card time,
-.article-back-link {
+.article-card time {
   color: var(--accent-strong);
   font-size: 13px;
   font-weight: 800;
@@ -611,8 +624,7 @@ button {
 }
 
 .article-card h2 a:hover,
-.article-read-link:hover,
-.article-back-link:hover {
+.article-read-link:hover {
   color: var(--accent);
 }
 
@@ -643,8 +655,7 @@ button {
   margin: 0 auto;
 }
 
-.article-back-link {
-  display: inline-block;
+.article-header .site-back-link {
   margin-bottom: 32px;
 }
 

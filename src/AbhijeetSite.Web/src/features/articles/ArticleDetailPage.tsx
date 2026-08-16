@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { SiteBackLink } from '../../shared/navigation/SiteBackLink';
 import { SiteHeader } from '../../shared/navigation/SiteHeader';
 import { ArticleStatusScreen } from './ArticleStatusScreen';
 import { articlesApi } from './articlesApi';
@@ -73,7 +74,7 @@ const ArticleContent: React.FC<ArticleContentProps> = ({ article }) => {
       <main className="article-page">
         <header className="article-header section-band">
           <div className="article-shell">
-            <a className="article-back-link" href="/ideas">Back to ideas</a>
+            <SiteBackLink href="/ideas">Ideas</SiteBackLink>
             <p className="eyebrow">Published {formatArticleDate(article.publishedAt)}</p>
             <h1>{article.title}</h1>
             <p className="article-summary">{article.summary}</p>
