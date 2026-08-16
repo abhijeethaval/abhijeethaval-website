@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { SiteBackLink } from '../../../../shared/navigation/SiteBackLink';
 
 type ArchitectureLens = 'ai-component' | 'enterprise-system' | 'enterprise-landscape';
 
@@ -81,7 +82,7 @@ export const ArchitectureLensSection: React.FC = () => {
 const LensHero: React.FC = () => {
   return (
     <header className="lens-hero thesis-shell">
-      <a href="/ideas">← Ideas</a>
+      <SiteBackLink href="/ideas">Ideas</SiteBackLink>
       <p>An interactive architecture thesis</p>
       <h1>Software Architecture in the AI Era</h1>
       <strong>Build a hard domain core. Surround it with a soft intelligence shell.</strong>

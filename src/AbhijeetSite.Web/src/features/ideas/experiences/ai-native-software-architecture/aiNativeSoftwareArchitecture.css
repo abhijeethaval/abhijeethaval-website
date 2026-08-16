@@ -28,12 +28,6 @@
     var(--background);
 }
 
-.lens-section a {
-  color: var(--accent-strong);
-  font-size: 13px;
-  font-weight: 800;
-}
-
 .lens-hero > p,
 .boundary-header > p {
   margin: 52px 0 12px;

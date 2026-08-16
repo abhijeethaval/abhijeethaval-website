@@ -2,7 +2,7 @@ import React from 'react';
 import { AuthStatus } from '../../features/auth/AuthStatus';
 import { useTheme } from '../theme/ThemeContext';
 
-type ActiveSection = 'architecture' | 'ideas' | 'none' | 'profile';
+type ActiveSection = 'architecture' | 'case-studies' | 'ideas' | 'none' | 'profile';
 
 interface SiteHeaderProps {
   activeSection: ActiveSection;
@@ -58,6 +58,11 @@ const getNavigationLinks = (activeSection: ActiveSection): ReadonlyArray<Navigat
       href: '/architecture',
       label: 'Architecture',
       isActive: activeSection === 'architecture',
+    },
+    {
+      href: '/case-studies/regulatory-platform-modernization',
+      label: 'Case studies',
+      isActive: activeSection === 'case-studies',
     },
     { href: '/ideas', label: 'Ideas', isActive: activeSection === 'ideas' },
   ];

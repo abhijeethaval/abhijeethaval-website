@@ -7,7 +7,7 @@ Personal website for Abhijeet Haval, implemented as a full-stack .NET Aspire app
 - **Orchestration**: .NET Aspire AppHost with service defaults for health, telemetry, and discovery
 - **Deployment**: Azure Container Apps with ACR-hosted container images and GitHub Actions OIDC
 
-The current production-facing capabilities are a curated professional profile, a PostgreSQL-backed public article experience, and API-owned Google login scaffolding. Authenticated drafting, publishing, and moderated comments remain planned.
+The current production-facing capabilities are a curated professional profile, a PostgreSQL-backed public article experience, a multi-chapter architecture case study, and API-owned Google login scaffolding. Authenticated drafting, publishing, and moderated comments remain planned.
 
 ---
 
@@ -15,7 +15,7 @@ The current production-facing capabilities are a curated professional profile, a
 
 | Area | Current state |
 |---|---|
-| Public experience | Profile, architecture, article list, and article detail pages. |
+| Public experience | Profile, site architecture, Ideas, published articles, and a multi-chapter regulatory-platform architecture case study. |
 | API surface | Profile endpoints, published article reads, and `/api/auth/*` session endpoints. |
 | Frontend data flow | React loads API data and auth state through relative `/api` calls. Vite proxies `/api` during local development; Nginx proxies `/api` in Azure. |
 | Backend data source | Curated in-process profile content in `ProfileContentProvider`; PostgreSQL persistence baseline for publishing modules. |
@@ -139,6 +139,7 @@ Run frontend checks:
 cd src\AbhijeetSite.Web
 npm run build
 npm run lint
+npm run test
 ```
 
 The solution file currently includes the API, AppHost, ServiceDefaults, and API test projects. The React project is a Vite/npm project under `src/AbhijeetSite.Web`, so validate it with npm scripts.
@@ -155,6 +156,7 @@ The solution file currently includes the API, AppHost, ServiceDefaults, and API 
 | Relative frontend API calls | Browser calls `/api/*`; local Vite and production Nginx provide the proxy. | Avoids browser-visible API host configuration and aligns local/prod routing. |
 | API-owned auth | Cookie auth, Google OAuth wiring, local `User`/`ExternalLogin` upsert, and admin policy constants live in the API. | Keeps OAuth secrets and provider tokens out of React; Google is optional until credentials are configured. |
 | Published article read model | Public endpoints query only render-ready `PublishedArticle` records in `Published` state. | Separates authoring risk from public reads; the owner publishing workflow remains future work. |
+| Versioned case-study snapshot | The React build bundles reviewed Markdown from the standalone regulatory-platform thesis, records its source commit, renders GFM tables, and serves reviewed Mermaid output as self-hosted SVGs under durable chapter routes. | Keeps production independent of GitHub availability, preserves the strict CSP, and makes source provenance and content synchronization explicit. |
 
 ---
 
@@ -240,4 +242,4 @@ The publishing-platform plan is tracked in `docs/implementation-plan/`:
 | 05 | Authenticated comments with moderation. |
 | 06 | LinkedIn integration and production hardening. |
 
-Until the remaining iterations land, this repository should be treated as a deployed profile and public article site plus the persistence foundation for authenticated authoring and comments.
+Until the remaining iterations land, this repository should be treated as a deployed profile, public article, and architecture case-study site plus the persistence foundation for authenticated authoring and comments.
