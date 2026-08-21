@@ -35,6 +35,20 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
+      - name: Validate API Persistence Configuration
+        env:
+          API_APP_NAME: ${{ inputs.api_app_name || vars.API_APP || 'aca-abhijeet-site' }}
+        run: |
+          database_secret_reference="$(az containerapp show \
+            --resource-group "${{ vars.RESOURCE_GROUP }}" \
+            --name "$API_APP_NAME" \
+            --query "properties.template.containers[0].env[?name=='ConnectionStrings__abhijeetsite-db'].secretRef | [0]" \
+            --output tsv)"
+          if [ -z "$database_secret_reference" ]; then
+            echo "::error title=Missing PostgreSQL configuration::Bind ConnectionStrings__abhijeetsite-db to an Azure Container Apps secret before deploying the API."
+            exit 1
+          fi
+
       - name: Deploy API App to Azure Container Apps
         uses: azure/container-apps-deploy-action@v2
         with:

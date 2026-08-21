@@ -25,7 +25,7 @@ builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddProblemDetails();
 builder.Services.AddOpenApi();
 builder.Services.AddSingleton<IApplicationClock, SystemApplicationClock>();
-builder.Services.AddPersistence(builder.Configuration);
+builder.Services.AddPersistence(builder.Configuration, builder.Environment);
 builder.Services.AddIdentityAuthentication(builder.Configuration, builder.Environment);
 
 var app = builder.Build();

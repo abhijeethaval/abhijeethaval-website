@@ -19,9 +19,11 @@ public static class PersistenceServiceCollectionExtensions
     /// </summary>
     public static IServiceCollection AddPersistence(
         this IServiceCollection services,
-        IConfiguration configuration)
+        IConfiguration configuration,
+        IWebHostEnvironment environment)
     {
         string? connectionString = configuration.GetConnectionString(PersistenceConnectionNames.ApplicationDatabase);
+        EnsureProductionConnectionStringIsConfigured(connectionString, environment);
 
         services.AddDbContext<AppDbContext>(options =>
         {
@@ -42,5 +44,17 @@ public static class PersistenceServiceCollectionExtensions
         services.AddScoped<UpdateArticleDraftHandler>();
 
         return services;
+    }
+
+    private static void EnsureProductionConnectionStringIsConfigured(
+        string? connectionString,
+        IWebHostEnvironment environment)
+    {
+        if (!environment.IsDevelopment() && string.IsNullOrWhiteSpace(connectionString))
+        {
+            const string message =
+                "ConnectionStrings__abhijeetsite-db must be configured outside Development.";
+            throw new InvalidOperationException(message);
+        }
     }
 }

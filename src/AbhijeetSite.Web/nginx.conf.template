@@ -38,9 +38,10 @@ http {
         # Serve the built Vite/React app from the Nginx image filesystem.
         location / {
             root   /usr/share/nginx/html;
-            index  index.html index.htm;
-            # If no static file exists, return index.html so client-side routes work.
-            try_files $uri $uri/ /index.html;
+            # A real directory without its own index falls back to the SPA root instead of returning 403.
+            index  index.html /index.html;
+            # Serve real static files; all other paths are handled by the client-side router.
+            try_files $uri /index.html;
         }
 
         # Reverse proxy /api/* to the internal API container app from API_UPSTREAM.

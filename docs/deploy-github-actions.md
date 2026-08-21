@@ -183,6 +183,22 @@ To allow the frontend Web container to securely talk to the backend C# API inter
    - **Value**: The internal FQDN of your API app. E.g. `https://aca-abhijeet-site.internal.kindgrass-f8a936c7.centralindia.azurecontainerapps.io` (Recommended Option A) or `http://aca-abhijeet-site.internal...` (Option B, requires "Allow insecure connections" to be checked on the API ingress).
 4. Click **Save** -> **Create** to deploy.
 
+### 4. Configure the Required PostgreSQL Connection in the API App
+
+The production API requires PostgreSQL. It stops during startup when the connection is absent,
+and the deployment workflow rejects an API app whose connection setting is not secret-backed.
+
+1. Provision a PostgreSQL database reachable from the API Container App.
+2. In the API app, open **Security** -> **Secrets** and add `postgres-connection-string`.
+   Prefer a Key Vault reference; otherwise use an Azure Container Apps secret. Do not store the
+   connection string in GitHub variables or source control.
+3. Open **Revisions and replicas** -> **Create new revision**, then edit the API container.
+4. Add an environment variable with:
+   - **Name**: `ConnectionStrings__abhijeetsite-db`
+   - **Source**: `Reference a secret`
+   - **Value**: `postgres-connection-string`
+5. Create the revision and verify `GET https://abhijeethaval.com/api/articles` returns `200`.
+
 ---
 
 ## Step 5: Deploy via Git
