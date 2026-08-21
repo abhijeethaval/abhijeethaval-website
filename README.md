@@ -170,6 +170,7 @@ The deployed topology is:
 | `abhijeetsite-api` | Internal Azure Container App running ASP.NET Core on port `8080`. |
 | Azure Container Registry | Stores API and Web images. |
 | Nginx `API_UPSTREAM` | Runtime environment variable pointing the Web app to the internal API FQDN. |
+| API `ConnectionStrings__abhijeetsite-db` | Secret-backed PostgreSQL connection required outside Development. |
 
 Local cloud-build helper:
 
